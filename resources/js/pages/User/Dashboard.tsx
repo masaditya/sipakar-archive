@@ -29,12 +29,12 @@ export default function UserDashboard({ stats, organization }: any) {
                                 <ClipboardList className="w-24 h-24" />
                             </div>
                             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">Total Soal</CardTitle>
+                                <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">Total Soal</CardTitle>
                                 <ClipboardList className="w-4 h-4 text-primary/60 group-hover:text-primary transition-colors" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-black">{stats.totalQuestions}</div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Butir evaluasi mandiri</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase opacity-60">Butir evaluasi mandiri</p>
                             </CardContent>
                         </Card>
                     </Link>
@@ -45,12 +45,12 @@ export default function UserDashboard({ stats, organization }: any) {
                                 <CheckCircle2 className="w-24 h-24" />
                             </div>
                             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">Terjawab</CardTitle>
+                                <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">Terjawab</CardTitle>
                                 <CheckCircle2 className="w-4 h-4 text-primary" />
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-black text-primary">{stats.totalAnswered}</div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">{stats.totalQuestions - stats.totalAnswered} soal tersisa</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase opacity-60">{stats.totalQuestions - stats.totalAnswered} soal tersisa</p>
                             </CardContent>
                         </Card>
                     </Link>
@@ -60,7 +60,7 @@ export default function UserDashboard({ stats, organization }: any) {
                             <TrendingUp className="w-24 h-24" />
                         </div>
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Progres</CardTitle>
+                            <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Progres</CardTitle>
                             <TrendingUp className="w-4 h-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
@@ -74,12 +74,12 @@ export default function UserDashboard({ stats, organization }: any) {
                             <Activity className="w-24 h-24 text-white" />
                         </div>
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-widest opacity-80">Estimasi Skor</CardTitle>
+                            <CardTitle className="text-xs font-black uppercase tracking-widest opacity-80">Estimasi Skor</CardTitle>
                             <div className="px-1.5 py-0.5 bg-white/20 text-[8px] rounded-md font-black uppercase tracking-tighter shadow-sm backdrop-blur">MAX 100</div>
                         </CardHeader>
                         <CardContent>
                             <div className="text-4xl font-black">{stats.totalScore}</div>
-                            <p className="text-[10px] font-bold opacity-70 uppercase mt-1">Berdasarkan jawaban aktif</p>
+                            <p className="text-xs font-bold opacity-70 uppercase mt-1">Berdasarkan jawaban aktif</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -88,42 +88,42 @@ export default function UserDashboard({ stats, organization }: any) {
                     <Link href="/questionnaire?filter=completed" className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
                         <Card className="bg-primary/5 border-primary/20 hover:border-primary hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full group">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-xs font-bold uppercase text-primary tracking-widest flex items-center gap-2">
+                                <CardTitle className="text-sm font-bold uppercase text-primary tracking-widest flex items-center gap-2">
                                     <div className="p-1 rounded-full bg-primary/20 group-hover:bg-primary group-hover:text-white transition-colors"><CheckCircle2 className="w-3 h-3 group-hover:stroke-white"/></div>
                                     Selesai / Finalisasi
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-black">{stats.completedCount}</div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Dihitung dalam nilai akhir</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase mt-1">Dihitung dalam nilai akhir</p>
                             </CardContent>
                         </Card>
                     </Link>
                     <Link href="/questionnaire?filter=submitted" className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-xl">
                         <Card className="bg-amber-500/5 border-amber-500/20 hover:border-amber-500 hover:shadow-md hover:-translate-y-1 hover:shadow-amber-500/10 transition-all duration-300 cursor-pointer h-full group">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-xs font-bold uppercase text-amber-600 tracking-widest flex items-center gap-2">
+                                <CardTitle className="text-sm font-bold uppercase text-amber-600 tracking-widest flex items-center gap-2">
                                     <Activity className="w-3 h-3 group-hover:scale-110 transition-transform"/>
                                     Diajukan (Review)
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-black text-amber-600">{stats.submittedCount}</div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Sedang ditinjau oleh admin</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase mt-1">Sedang ditinjau oleh admin</p>
                             </CardContent>
                         </Card>
                     </Link>
                     <Link href="/questionnaire?filter=revision" className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive rounded-xl">
                         <Card className="bg-destructive/5 border-destructive/20 hover:border-destructive hover:shadow-md hover:-translate-y-1 hover:shadow-destructive/10 transition-all duration-300 cursor-pointer h-full group">
                             <CardHeader className="pb-2">
-                                <CardTitle className="text-xs font-bold uppercase text-destructive tracking-widest flex items-center gap-2">
+                                <CardTitle className="text-sm font-bold uppercase text-destructive tracking-widest flex items-center gap-2">
                                     <AlertCircle className="w-3 h-3 group-hover:scale-110 transition-transform"/>
                                     Butuh Perbaikan
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="text-3xl font-black text-destructive">{stats.revisionCount}</div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Segera perbaiki bukti dukung</p>
+                                <p className="text-xs font-bold text-muted-foreground uppercase mt-1">Segera perbaiki bukti dukung</p>
                             </CardContent>
                         </Card>
                     </Link>
