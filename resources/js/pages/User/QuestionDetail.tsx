@@ -12,6 +12,7 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
     const { data, setData, post, processing, errors, progress } = useForm({
         question_id: question.id,
         option_id: answer?.option_id || '',
+        next_id: nextId || '',
         files: [] as File[],
         _method: 'POST'
     });

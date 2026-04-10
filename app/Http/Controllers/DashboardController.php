@@ -217,7 +217,11 @@ class DashboardController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Jawaban berhasil disimpan');
+        if ($request->filled('next_id')) {
+            return redirect()->route('questionnaire.detail', $request->input('next_id'))->with('success', 'Jawaban berhasil disimpan, beralih ke soal berikutnya.');
+        }
+
+        return redirect()->route('questionnaire.list')->with('success', 'Jawaban berhasil disimpan. Anda telah di penghujung kuisioner!');
     }
 
     public function updateAnswerStatus(Request $request, Answer $answer)
