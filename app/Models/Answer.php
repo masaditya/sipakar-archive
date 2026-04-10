@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['user_id', 'question_id', 'option_id', 'status'])]
+#[Fillable(['period_id', 'user_id', 'question_id', 'option_id', 'status'])]
 class Answer extends Model
 {
     public function user()

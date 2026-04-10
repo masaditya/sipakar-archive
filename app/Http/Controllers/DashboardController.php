@@ -162,9 +162,23 @@ class DashboardController extends Controller
                     ->with('evidenceSubmissions')
                     ->first();
 
+        // Get adjacent questions
+        $allQuestions = Question::whereHas('subAspect.aspect', function($q) use ($selectedPeriodId) {
+            $q->where('period_id', $selectedPeriodId);
+        })->orderBy('id', 'asc')->pluck('id');
+
+        $currentIndex = $allQuestions->search($question->id);
+        
+        $prevId = $currentIndex > 0 ? $allQuestions[$currentIndex - 1] : null;
+        $nextId = $currentIndex !== false && $currentIndex < $allQuestions->count() - 1 ? $allQuestions[$currentIndex + 1] : null;
+
         return Inertia::render('User/QuestionDetail', [
             'question' => $question,
-            'answer' => $answer
+            'answer' => $answer,
+            'prevId' => $prevId,
+            'nextId' => $nextId,
+            'currentIndex' => $currentIndex !== false ? $currentIndex + 1 : 0,
+            'totalCount' => $allQuestions->count()
         ]);
     }
 

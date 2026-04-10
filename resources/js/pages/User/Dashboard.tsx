@@ -1,19 +1,28 @@
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, ClipboardList, TrendingUp, Building2, Activity, AlertCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, ClipboardList, TrendingUp, Building2, Activity, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function UserDashboard({ stats, organization }: any) {
     return (
         <>
             <Head title="Dashboard Pelaksana" />
-            <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
-                <div className="flex flex-col gap-2 border-b pb-4">
-                    <h1 className="text-3xl font-bold tracking-tight">Selamat Datang, {organization?.name || 'Pelaksana'}</h1>
-                    <p className="text-muted-foreground">Monitor progres pengawasan internal kearsipan Anda di sini.</p>
+            <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
+                    <div className="flex flex-col gap-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Selamat Datang, {organization?.name || 'Pelaksana'}</h1>
+                        <p className="text-muted-foreground text-sm sm:text-base">Monitor progres pengawasan internal kearsipan Anda di sini.</p>
+                    </div>
+                    <Button asChild size="lg" className="w-full sm:w-auto shadow-sm shrink-0">
+                        <Link href="/questionnaire">
+                            Isi Kuisioner Sekarang
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                        </Link>
+                    </Button>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
                     <Card className="bg-linear-to-br from-background to-primary/5 border-primary/20 hover:border-primary transition-all duration-300 group shadow-sm overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -rotate-12 translate-x-1 -translate-y-1">
                             <ClipboardList className="w-24 h-24" />
@@ -71,7 +80,7 @@ export default function UserDashboard({ stats, organization }: any) {
                     </Card>
                 </div>
 
-                <div className="grid gap-6 md:grid-cols-3">
+                <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3">
                     <Card className="bg-primary/5 border-primary/20">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-xs font-bold uppercase text-primary tracking-widest flex items-center gap-2">
