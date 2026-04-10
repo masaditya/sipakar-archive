@@ -13,8 +13,8 @@ export function FilePreviewModal({ isOpen, onClose, fileUrl, fileName }: FilePre
     if (!fileUrl) return null;
 
     const getFileType = (url: string) => {
-        const ext = url.split('.').pop()?.toLowerCase();
-        console.log(ext)
+        const urlWithoutQuery = url.split('?')[0];
+        const ext = urlWithoutQuery.split('.').pop()?.toLowerCase();
         if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) return 'image';
         if (['mp4', 'webm', 'ogg', 'mov'].includes(ext || '')) return 'video';
         if (ext === 'pdf') return 'pdf';
@@ -22,7 +22,6 @@ export function FilePreviewModal({ isOpen, onClose, fileUrl, fileName }: FilePre
     };
 
     const fileType = getFileType(fileUrl);
-    console.log(fileType)
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

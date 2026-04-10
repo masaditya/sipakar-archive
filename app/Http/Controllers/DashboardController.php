@@ -236,6 +236,19 @@ class DashboardController extends Controller
         return redirect()->back()->with('success', 'Status/Catatan jawaban diperbarui');
     }
 
+    public function bulkUpdateAnswerStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'answer_ids' => 'required|array',
+            'answer_ids.*' => 'exists:answers,id',
+            'status' => 'required|in:submitted,revision,completed'
+        ]);
+
+        Answer::whereIn('id', $validated['answer_ids'])->update(['status' => $validated['status']]);
+
+        return redirect()->back()->with('success', 'Status massal berhasil diperbarui');
+    }
+
     public function deleteEvidence(EvidenceSubmission $submission, Request $request)
     {
         $user = $request->user();
