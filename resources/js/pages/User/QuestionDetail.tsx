@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, FileUp, Info, CheckCircle2, Download, ExternalLink, FileText, Scale, Eye, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileUp, Info, CheckCircle2, Download, ExternalLink, FileText, Scale, Eye, Trash2, MessageSquare, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { FilePreviewModal } from '@/components/file-preview-modal';
 import { Progress } from '@/components/ui/progress';
@@ -287,6 +287,27 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
 
                         {/* RIGHT COLUMN: Info & Status */}
                         <div className="space-y-6 lg:sticky lg:top-6 col-span-6">
+
+                            {answer?.notes && (
+                                <Card className={`border-2 shadow-md relative overflow-hidden ${answer.status === 'revision' ? 'border-destructive/40 bg-destructive/5' : 'border-primary/30 bg-primary/5'}`}>
+                                    <div className={`absolute top-0 right-0 p-2 opacity-5 -rotate-12 translate-x-2 -translate-y-2`}>
+                                        <MessageSquare className="w-20 h-20" />
+                                    </div>
+                                    <CardHeader className={`pb-3 pt-4 border-b mb-4 ${answer.status === 'revision' ? 'border-destructive/10' : 'border-primary/10'}`}>
+                                        <div className={`flex items-center gap-2.5 ${answer.status === 'revision' ? 'text-destructive' : 'text-primary'}`}>
+                                            <div className={`p-1.5 rounded-lg ${answer.status === 'revision' ? 'bg-destructive/20' : 'bg-primary/20'}`}>
+                                                <MessageSquare className="w-4 h-4" />
+                                            </div>
+                                            <CardTitle className="text-sm font-black uppercase tracking-widest">Feedback / Catatan Admin</CardTitle>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm leading-relaxed font-bold text-foreground/90 whitespace-pre-wrap">
+                                            {answer.notes}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            )}
 
                             {/* Reference Info Card */}
                             <Card className="border-2 border-primary/30 shadow-[0_20px_40px_-15px_rgba(var(--primary),.3)]  overflow-hidden">

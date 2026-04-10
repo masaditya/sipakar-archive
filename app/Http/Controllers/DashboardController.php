@@ -227,12 +227,13 @@ class DashboardController extends Controller
     public function updateAnswerStatus(Request $request, Answer $answer)
     {
         $validated = $request->validate([
-            'status' => 'required|in:submitted,revision,completed'
+            'status' => 'sometimes|in:submitted,revision,completed',
+            'notes' => 'nullable|string'
         ]);
 
-        $answer->update(['status' => $validated['status']]);
+        $answer->update($validated);
 
-        return redirect()->back()->with('success', 'Status jawaban diperbarui');
+        return redirect()->back()->with('success', 'Status/Catatan jawaban diperbarui');
     }
 
     public function deleteEvidence(EvidenceSubmission $submission, Request $request)

@@ -23,33 +23,37 @@ export default function UserDashboard({ stats, organization }: any) {
                 </div>
 
                 <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card className="bg-linear-to-br from-background to-primary/5 border-primary/20 hover:border-primary transition-all duration-300 group shadow-sm overflow-hidden relative">
-                        <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -rotate-12 translate-x-1 -translate-y-1">
-                            <ClipboardList className="w-24 h-24" />
-                        </div>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Soal</CardTitle>
-                            <ClipboardList className="w-4 h-4 text-primary/60" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-black">{stats.totalQuestions}</div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Butir evaluasi mandiri</p>
-                        </CardContent>
-                    </Card>
+                    <Link href="/questionnaire?filter=all" className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
+                        <Card className="bg-linear-to-br from-background to-primary/5 border-primary/20 hover:border-primary hover:shadow-md hover:-translate-y-1 transition-all duration-300 group shadow-sm overflow-hidden relative cursor-pointer h-full">
+                            <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -rotate-12 translate-x-1 -translate-y-1">
+                                <ClipboardList className="w-24 h-24" />
+                            </div>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">Total Soal</CardTitle>
+                                <ClipboardList className="w-4 h-4 text-primary/60 group-hover:text-primary transition-colors" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-black">{stats.totalQuestions}</div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">Butir evaluasi mandiri</p>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
-                    <Card className="bg-linear-to-br from-background to-primary/10 border-primary/20 hover:border-primary transition-all duration-300 group shadow-sm overflow-hidden relative">
-                        <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -rotate-12 translate-x-1 -translate-y-1">
-                            <CheckCircle2 className="w-24 h-24" />
-                        </div>
-                        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Terjawab</CardTitle>
-                            <CheckCircle2 className="w-4 h-4 text-primary" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-black text-primary">{stats.totalAnswered}</div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">{stats.totalQuestions - stats.totalAnswered} soal tersisa</p>
-                        </CardContent>
-                    </Card>
+                    <Link href="/questionnaire?filter=answered" className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
+                        <Card className="bg-linear-to-br from-background to-primary/10 border-primary/20 hover:border-primary hover:shadow-md hover:-translate-y-1 transition-all duration-300 group shadow-sm overflow-hidden relative cursor-pointer h-full">
+                            <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -rotate-12 translate-x-1 -translate-y-1">
+                                <CheckCircle2 className="w-24 h-24" />
+                            </div>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">Terjawab</CardTitle>
+                                <CheckCircle2 className="w-4 h-4 text-primary" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-black text-primary">{stats.totalAnswered}</div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">{stats.totalQuestions - stats.totalAnswered} soal tersisa</p>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
                     <Card className="bg-linear-to-br from-background to-primary/5 border-primary/20 hover:border-primary transition-all duration-300 group shadow-sm overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-3 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity -rotate-12 translate-x-1 -translate-y-1">
@@ -81,42 +85,48 @@ export default function UserDashboard({ stats, organization }: any) {
                 </div>
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3">
-                    <Card className="bg-primary/5 border-primary/20">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-bold uppercase text-primary tracking-widest flex items-center gap-2">
-                                <div className="p-1 rounded-full bg-primary/20"><CheckCircle2 className="w-3 h-3"/></div>
-                                Selesai / Finalisasi
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-black">{stats.completedCount}</div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Dihitung dalam nilai akhir</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-amber-500/5 border-amber-500/20">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-bold uppercase text-amber-600 tracking-widest flex items-center gap-2">
-                                <Activity className="w-3 h-3"/>
-                                Diajukan (Review)
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-black text-amber-600">{stats.submittedCount}</div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Sedang ditinjau oleh admin</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-destructive/5 border-destructive/20">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-xs font-bold uppercase text-destructive tracking-widest flex items-center gap-2">
-                                <AlertCircle className="w-3 h-3"/>
-                                Butuh Perbaikan
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-black text-destructive">{stats.revisionCount}</div>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Segera perbaiki bukti dukung</p>
-                        </CardContent>
-                    </Card>
+                    <Link href="/questionnaire?filter=completed" className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-xl">
+                        <Card className="bg-primary/5 border-primary/20 hover:border-primary hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full group">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold uppercase text-primary tracking-widest flex items-center gap-2">
+                                    <div className="p-1 rounded-full bg-primary/20 group-hover:bg-primary group-hover:text-white transition-colors"><CheckCircle2 className="w-3 h-3 group-hover:stroke-white"/></div>
+                                    Selesai / Finalisasi
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-black">{stats.completedCount}</div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Dihitung dalam nilai akhir</p>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                    <Link href="/questionnaire?filter=submitted" className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded-xl">
+                        <Card className="bg-amber-500/5 border-amber-500/20 hover:border-amber-500 hover:shadow-md hover:-translate-y-1 hover:shadow-amber-500/10 transition-all duration-300 cursor-pointer h-full group">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold uppercase text-amber-600 tracking-widest flex items-center gap-2">
+                                    <Activity className="w-3 h-3 group-hover:scale-110 transition-transform"/>
+                                    Diajukan (Review)
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-black text-amber-600">{stats.submittedCount}</div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Sedang ditinjau oleh admin</p>
+                            </CardContent>
+                        </Card>
+                    </Link>
+                    <Link href="/questionnaire?filter=revision" className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive rounded-xl">
+                        <Card className="bg-destructive/5 border-destructive/20 hover:border-destructive hover:shadow-md hover:-translate-y-1 hover:shadow-destructive/10 transition-all duration-300 cursor-pointer h-full group">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-xs font-bold uppercase text-destructive tracking-widest flex items-center gap-2">
+                                    <AlertCircle className="w-3 h-3 group-hover:scale-110 transition-transform"/>
+                                    Butuh Perbaikan
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-black text-destructive">{stats.revisionCount}</div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Segera perbaiki bukti dukung</p>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
 
                 <Card className="shadow-sm border-l-4 border-l-primary bg-muted/30">
