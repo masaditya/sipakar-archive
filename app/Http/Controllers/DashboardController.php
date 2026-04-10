@@ -26,21 +26,23 @@ class DashboardController extends Controller
 
     private function adminDashboard()
     {
-        // Calculate total statistics
+        $selectedPeriodId = session('selected_period_id');
+        
         $totalUsers = \App\Models\User::where('role', 'user')->count();
         $totalOrgs = Organization::count();
-        $totalQuestions = Question::count();
-        $totalAspects = Aspect::count();
+        $totalQuestions = Question::whereHas('subAspect.aspect', function($q) use ($selectedPeriodId) {
+            $q->where('period_id', $selectedPeriodId);
+        })->count();
+        $totalAspects = Aspect::where('period_id', $selectedPeriodId)->count();
 
-        // Get user progress and scores
-        $usersProgress = \App\Models\User::where('role', 'user')->with(['organization', 'answers.option'])->get()->map(function($user) use ($totalQuestions) {
+        $usersProgress = \App\Models\User::where('role', 'user')->with(['organization', 'answers' => function($q) use ($selectedPeriodId) {
+            $q->where('period_id', $selectedPeriodId)->with('option');
+        }])->get()->map(function($user) use ($totalQuestions, $selectedPeriodId) {
             $totalAnswered = $user->answers->count();
             $completedCount = $user->answers->where('status', 'completed')->count();
             
-            // Only count score for completed answers
-            $totalScore = $user->answers->where('status', 'completed')->sum(function($answer) {
-                return $answer->option ? $answer->option->score : 0;
-            });
+            // Calculate weighted score
+            $score = $this->calculateWeightedScore($user, $selectedPeriodId);
 
             return [
                 'id' => $user->id,
@@ -49,12 +51,10 @@ class DashboardController extends Controller
                 'organization' => $user->organization ? $user->organization->name : '-',
                 'progress' => $totalQuestions > 0 ? round(($totalAnswered / $totalQuestions) * 100) : 0,
                 'completed_progress' => $totalQuestions > 0 ? round(($completedCount / $totalQuestions) * 100) : 0,
-                'score' => $totalScore
+                'score' => round($score, 2)
             ];
         });
 
-        // Filter out users who haven't started (optional, maybe keep them all to see progress 0%) 
-        // Let's sort by score descending
         $usersProgress = $usersProgress->sortByDesc('score')->values();
 
         return Inertia::render('Admin/Dashboard', [
@@ -70,12 +70,18 @@ class DashboardController extends Controller
 
     private function userDashboard($user)
     {
-        $totalQuestions = Question::count();
-        $answers = Answer::where('user_id', $user->id)->with('option')->get();
+        $selectedPeriodId = session('selected_period_id');
+        $totalQuestions = Question::whereHas('subAspect.aspect', function($q) use ($selectedPeriodId) {
+            $q->where('period_id', $selectedPeriodId);
+        })->count();
+
+        $answers = Answer::where('user_id', $user->id)
+                    ->where('period_id', $selectedPeriodId)
+                    ->with('option')
+                    ->get();
+
         $totalAnswered = $answers->count();
-        
-        // Sum only completed
-        $totalScore = $answers->where('status', 'completed')->sum(fn($a) => $a->option ? $a->option->score : 0);
+        $score = $this->calculateWeightedScore($user, $selectedPeriodId);
         $completedCount = $answers->where('status', 'completed')->count();
         $revisionCount = $answers->where('status', 'revision')->count();
         $submittedCount = $answers->where('status', 'submitted')->count();
@@ -86,7 +92,7 @@ class DashboardController extends Controller
             'stats' => [
                 'totalQuestions' => $totalQuestions,
                 'totalAnswered' => $totalAnswered,
-                'totalScore' => $totalScore,
+                'totalScore' => round($score, 2),
                 'progress' => $progress,
                 'completedCount' => $completedCount,
                 'revisionCount' => $revisionCount,
@@ -96,11 +102,48 @@ class DashboardController extends Controller
         ]);
     }
 
+    private function calculateWeightedScore($user, $periodId)
+    {
+        $aspects = Aspect::where('period_id', $periodId)->with('subAspects.questions.answers', function($q) use ($user, $periodId) {
+            $q->where('user_id', $user->id)->where('period_id', $periodId)->with('option');
+        })->get();
+
+        $finalScore = 0;
+
+        foreach ($aspects as $aspect) {
+            $aspectWeightedScore = 0;
+            $aspectWeight = $aspect->score_weight ?? 0;
+
+            foreach ($aspect->subAspects as $subAspect) {
+                $subAspectWeight = $subAspect->score_weight ?? 0;
+                $questions = $subAspect->questions;
+                $questionCount = $questions->count();
+
+                if ($questionCount > 0) {
+                    $subAspectRawScore = 0;
+                    foreach ($questions as $question) {
+                        // Find the answer for this user in this period
+                        $answer = $question->answers->first();
+                        if ($answer && $answer->status === 'completed' && $answer->option) {
+                            $subAspectRawScore += $answer->option->score;
+                        }
+                    }
+                    $subAspectAverage = $subAspectRawScore / $questionCount;
+                    $aspectWeightedScore += ($subAspectAverage * $subAspectWeight / 100);
+                }
+            }
+            $finalScore += ($aspectWeightedScore * $aspectWeight / 100);
+        }
+
+        return $finalScore;
+    }
+
     public function questionnaireList(Request $request)
     {
         $user = $request->user();
-        $aspects = Aspect::with(['subAspects.questions.answers' => function($q) use ($user) {
-            $q->where('user_id', $user->id);
+        $selectedPeriodId = session('selected_period_id');
+        $aspects = Aspect::where('period_id', $selectedPeriodId)->with(['subAspects.questions.answers' => function($q) use ($user, $selectedPeriodId) {
+            $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId);
         }])->get();
 
         return Inertia::render('User/QuestionList', [
@@ -111,9 +154,11 @@ class DashboardController extends Controller
     public function questionnaireDetail(Question $question, Request $request)
     {
         $user = $request->user();
+        $selectedPeriodId = session('selected_period_id');
         $question->load(['subAspect.aspect', 'options']);
         $answer = Answer::where('user_id', $user->id)
                     ->where('question_id', $question->id)
+                    ->where('period_id', $selectedPeriodId)
                     ->with('evidenceSubmissions')
                     ->first();
 
@@ -128,19 +173,23 @@ class DashboardController extends Controller
         $validated = $request->validate([
             'question_id' => 'required|exists:questions,id',
             'option_id' => 'required|exists:options,id',
-            'files.*' => 'nullable|file', // Can upload multiple evidence
+            'files.*' => 'nullable|file',
         ]);
 
         $user = $request->user();
+        $selectedPeriodId = session('selected_period_id');
 
-        // Check if already completed
-        $existing = Answer::where('user_id', $user->id)->where('question_id', $validated['question_id'])->first();
+        $existing = Answer::where('user_id', $user->id)
+                        ->where('question_id', $validated['question_id'])
+                        ->where('period_id', $selectedPeriodId)
+                        ->first();
+
         if ($existing && $existing->status === 'completed') {
              return redirect()->back()->with('error', 'Soal sudah difinalisasi dan tidak dapat diubah lagi.');
         }
 
         $answer = Answer::updateOrCreate(
-            ['user_id' => $user->id, 'question_id' => $validated['question_id']],
+            ['user_id' => $user->id, 'question_id' => $validated['question_id'], 'period_id' => $selectedPeriodId],
             ['option_id' => $validated['option_id'], 'status' => 'submitted']
         );
 
@@ -159,7 +208,6 @@ class DashboardController extends Controller
 
     public function updateAnswerStatus(Request $request, Answer $answer)
     {
-        // Only admin can do this via middleware role:admin
         $validated = $request->validate([
             'status' => 'required|in:submitted,revision,completed'
         ]);
@@ -172,18 +220,14 @@ class DashboardController extends Controller
     public function deleteEvidence(EvidenceSubmission $submission, Request $request)
     {
         $user = $request->user();
-        
-        // Ensure the file belongs to the user or admin
         if ($submission->answer->user_id !== $user->id && $user->role !== 'admin') {
             return redirect()->back()->with('error', 'Unauthorized.');
         }
 
-        // Don't allow deletion if answer is already completed
         if ($submission->answer->status === 'completed' && $user->role !== 'admin') {
             return redirect()->back()->with('error', 'Jawaban sudah difinalisasi.');
         }
 
-        // Delete from storage
         if (Storage::disk('public')->exists($submission->file_path)) {
             Storage::disk('public')->delete($submission->file_path);
         }

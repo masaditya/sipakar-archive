@@ -284,9 +284,10 @@ export default function QuestionDetail({ question, answer }: any) {
                                             <Scale className="w-3.5 h-3.5" />
                                             <span className="text-[9px] font-black uppercase tracking-widest">Dasar Hukum</span>
                                         </div>
-                                        <div className="bg-background/80 p-4 rounded-2xl border border-muted text-sm leading-relaxed text-muted-foreground font-medium italic">
-                                            {question.legal_basis || 'Tidak ada dasar hukum khusus tercatat.'}
-                                        </div>
+                                        <div 
+                                            className="bg-background/80 p-4 rounded-2xl border border-muted text-sm leading-relaxed text-muted-foreground font-medium italic ql-editor-mini"
+                                            dangerouslySetInnerHTML={{ __html: question.legal_basis || 'Tidak ada dasar hukum khusus tercatat.' }}
+                                        />
                                     </div>
 
                                     {/* Instructions */}
@@ -295,9 +296,10 @@ export default function QuestionDetail({ question, answer }: any) {
                                             <FileText className="w-3.5 h-3.5" />
                                             <span className="text-[9px] font-black uppercase tracking-widest">Deskripsi & Petunjuk</span>
                                         </div>
-                                        <p className="text-sm leading-relaxed text-muted-foreground/80 font-medium pl-1">
-                                            {question.instructions || 'Harap isi sesuai dengan kriteria yang berlaku dan sertakan bukti yang valid.'}
-                                        </p>
+                                        <div 
+                                            className="text-sm leading-relaxed text-muted-foreground/80 font-medium pl-1 ql-editor-mini"
+                                            dangerouslySetInnerHTML={{ __html: question.instructions || 'Harap isi sesuai dengan kriteria yang berlaku dan sertakan bukti yang valid.' }}
+                                        />
                                     </div>
                                     
                                     {/* Example File */}
@@ -326,6 +328,28 @@ export default function QuestionDetail({ question, answer }: any) {
                     </div>
                 </div>
             </div>
+
+            <style>{`
+                .ql-editor-mini {
+                    padding: 0;
+                }
+                .ql-editor-mini p {
+                    margin-bottom: 0.5rem;
+                }
+                .ql-editor-mini p:last-child {
+                    margin-bottom: 0;
+                }
+                .ql-editor-mini ul, .ql-editor-mini ol {
+                    padding-left: 1.5rem;
+                    list-style-position: outside;
+                }
+                .ql-editor-mini ul {
+                    list-style-type: disc;
+                }
+                .ql-editor-mini ol {
+                    list-style-type: decimal;
+                }
+            `}</style>
 
             <FilePreviewModal 
                 isOpen={previewModal.isOpen} 

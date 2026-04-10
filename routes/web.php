@@ -48,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::put('/admin/answers/{answer}/status', [DashboardController::class, 'updateAnswerStatus'])->name('admin.answers.status');
         Route::get('/admin/review/{user}', [\App\Http\Controllers\AdminCMSController::class, 'reviewOrganization'])->name('admin.review');
+        Route::post('/admin/switch-period', [\App\Http\Controllers\AdminCMSController::class, 'switchPeriod'])->name('admin.switch_period');
     });
 });
 

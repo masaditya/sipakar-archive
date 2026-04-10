@@ -7,13 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
-import { store } from '@/routes/register';
+// import { store } from '@/routes/register';
 
 export default function Register() {
     return (
         <>
             <Head title="Register" />
-            <Form
+            {/* <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
@@ -120,7 +120,7 @@ export default function Register() {
                         </div>
                     </>
                 )}
-            </Form>
+            </Form> */}
         </>
     );
 }

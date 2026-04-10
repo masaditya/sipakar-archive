@@ -8,22 +8,35 @@ use App\Models\Aspect;
 use App\Models\SubAspect;
 use App\Models\Question;
 use App\Models\Organization;
+use App\Models\Period;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class AdminCMSController extends Controller
 {
     public function userManagement(Request $request) {
-        $users = User::all();
-        $organizations = Organization::all();
+        $search = $request->input('search');
+        $users = User::query()
+            ->when($search, function($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('username', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->orderBy('id', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+            
+        $organizations = Organization::orderBy('name', 'asc')->get();
         return \Inertia\Inertia::render('Admin/UserManagement', [
             'users' => $users,
-            'organizations' => $organizations
+            'organizations' => $organizations,
+            'filters' => $request->only(['search'])
         ]);
     }
 
     public function centralManagement() {
-        $aspects = Aspect::with('subAspects.questions.options')->get();
+        $selectedPeriodId = session('selected_period_id');
+        $aspects = Aspect::where('period_id', $selectedPeriodId)->with('subAspects.questions.options')->get();
         $organizations = Organization::all();
         return \Inertia\Inertia::render('Admin/CentralManagement', [
             'aspects' => $aspects,
@@ -118,15 +131,18 @@ class AdminCMSController extends Controller
     public function storeAspect(Request $request) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
+            'score_weight' => 'nullable|numeric|min:0|max:100'
         ]);
+        $validated['period_id'] = session('selected_period_id');
         Aspect::create($validated);
         return back()->with('success', 'Aspect created.');
     }
     public function updateAspect(Request $request, Aspect $aspect) {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'description' => 'nullable|string'
+            'description' => 'nullable|string',
+            'score_weight' => 'nullable|numeric|min:0|max:100'
         ]);
         $aspect->update($validated);
         return back()->with('success', 'Aspect updated.');
@@ -141,7 +157,8 @@ class AdminCMSController extends Controller
         $validated = $request->validate([
             'aspect_id' => 'required|exists:aspects,id',
             'name' => 'required|string|max:255',
-            'type' => 'required|in:UP,UK'
+            'type' => 'required|in:UP,UK',
+            'score_weight' => 'nullable|numeric|min:0|max:100'
         ]);
         SubAspect::create($validated);
         return back()->with('success', 'SubAspect created.');
@@ -150,7 +167,8 @@ class AdminCMSController extends Controller
         $validated = $request->validate([
             'aspect_id' => 'required|exists:aspects,id',
             'name' => 'required|string|max:255',
-            'type' => 'required|in:UP,UK'
+            'type' => 'required|in:UP,UK',
+            'score_weight' => 'nullable|numeric|min:0|max:100'
         ]);
         $subAspect->update($validated);
         return back()->with('success', 'SubAspect updated.');
@@ -259,13 +277,22 @@ class AdminCMSController extends Controller
 
     public function reviewOrganization(User $user) {
         $user->load('organization');
-        $aspects = Aspect::with(['subAspects.questions.answers' => function($q) use ($user) {
-            $q->where('user_id', $user->id)->with('evidenceSubmissions', 'option');
+        $selectedPeriodId = session('selected_period_id');
+        $aspects = Aspect::where('period_id', $selectedPeriodId)->with(['subAspects.questions.answers' => function($q) use ($user, $selectedPeriodId) {
+            $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId)->with('evidenceSubmissions', 'option');
         }, 'subAspects.questions.options'])->get();
 
         return \Inertia\Inertia::render('Admin/ReviewAssessment', [
             'pelaksana' => $user,
             'aspects' => $aspects
         ]);
+    }
+
+    public function switchPeriod(Request $request) {
+        $validated = $request->validate([
+            'period_id' => 'required|exists:periods,id'
+        ]);
+        session(['selected_period_id' => $validated['period_id']]);
+        return back()->with('success', 'Periode pengawasan berhasil diubah.');
     }
 }

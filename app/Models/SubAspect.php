@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['aspect_id', 'name', 'type'])]
+#[Fillable(['aspect_id', 'name', 'type', 'score_weight'])]
 class SubAspect extends Model
 {
     public function aspect()

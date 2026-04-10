@@ -64,7 +64,6 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                     <div className="grid grid-cols-1 gap-6">
                                         {sub.questions.map((q: any, idx: number) => {
                                             const answer = q.answers && q.answers[0];
-                                            const StatusIcon = answer ? statusMap[answer.status]?.icon : Clock;
 
                                             return (
                                                 <Card key={q.id} className={`border-none shadow-sm ring-1 ring-inset ${answer ? 'ring-primary/10 bg-card' : 'ring-muted bg-muted/20 opacity-60'}`}>
@@ -109,15 +108,19 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                                                     </div>
                                                                     <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10">
                                                                         <span className="text-[9px] font-black uppercase tracking-widest text-amber-600 block mb-2">DASAR HUKUM:</span>
-                                                                        <p className="text-xs font-medium text-muted-foreground italic leading-relaxed">
-                                                                            {q.legal_basis || 'Tidak ada dasar hukum khusus.'}
-                                                                        </p>
+                                                                        <div 
+                                                                            className="text-xs font-medium text-muted-foreground italic leading-relaxed ql-editor-mini"
+                                                                            dangerouslySetInnerHTML={{ __html: q.legal_basis || 'Tidak ada dasar hukum khusus.' }}
+                                                                        />
                                                                     </div>
                                                                 </div>
 
                                                                 <div className="space-y-1">
                                                                     <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground block pl-1">PETUNJUK:</span>
-                                                                    <p className="text-xs font-medium text-muted-foreground/70 pl-1">{q.instructions || '-'}</p>
+                                                                    <div 
+                                                                        className="text-xs font-medium text-muted-foreground/70 pl-1 ql-editor-mini"
+                                                                        dangerouslySetInnerHTML={{ __html: q.instructions || '-' }}
+                                                                    />
                                                                 </div>
 
                                                                 <div className="space-y-3">
@@ -167,6 +170,28 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                     ))}
                 </div>
             </div>
+
+            <style>{`
+                .ql-editor-mini {
+                    padding: 0;
+                }
+                .ql-editor-mini p {
+                    margin-bottom: 0.5rem;
+                }
+                .ql-editor-mini p:last-child {
+                    margin-bottom: 0;
+                }
+                .ql-editor-mini ul, .ql-editor-mini ol {
+                    padding-left: 1.5rem;
+                    list-style-position: outside;
+                }
+                .ql-editor-mini ul {
+                    list-style-type: disc;
+                }
+                .ql-editor-mini ol {
+                    list-style-type: decimal;
+                }
+            `}</style>
 
             <FilePreviewModal 
                 isOpen={previewModal.isOpen} 

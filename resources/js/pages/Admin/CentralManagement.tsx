@@ -1,12 +1,24 @@
-import { Head, router, Link } from '@inertiajs/react';
-import { dashboard } from '@/routes';
+import { Head, router, Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { 
+    ChevronDown, 
+    ChevronRight, 
+    Plus, 
+    Pencil, 
+    Trash2, 
+    HelpCircle, 
+    Layers, 
+    CalendarDays,
+    Info,
+    Percent
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-export default function CentralManagement({ aspects, organizations }: any) {
+export default function CentralManagement({ aspects }: any) {
+    const { current_period } = usePage<any>().props;
+
     // === COLLAPSE STATES ===
     const [expandedAspects, setExpandedAspects] = useState<number[]>([]);
     const toggleAspect = (id: number) => {
@@ -19,20 +31,26 @@ export default function CentralManagement({ aspects, organizations }: any) {
     };
 
     // === ASPECT CRUD ===
-    const [newAspect, setNewAspect] = useState({ name: '', description: '' });
+    const [newAspect, setNewAspect] = useState({ name: '', description: '', score_weight: '' });
     const handleCreateAspect = (e: React.FormEvent) => {
         e.preventDefault();
-        router.post('/admin/aspects', newAspect, { onSuccess: () => setNewAspect({ name: '', description: '' }) });
+        router.post('/admin/aspects', newAspect, { 
+            onSuccess: () => setNewAspect({ name: '', description: '', score_weight: '' }),
+            preserveScroll: true
+        });
     };
     const handleDeleteAspect = (id: number) => {
         if(confirm('Hapus aspek ini berserta seluruh sub-aspek dan soal di dalamnya?')) router.delete(`/admin/aspects/${id}`);
     };
 
     // === SUBASPECT CRUD ===
-    const [newSub, setNewSub] = useState({ aspect_id: '', name: '', type: 'UP' });
+    const [newSub, setNewSub] = useState({ aspect_id: '', name: '', type: 'UP', score_weight: '' });
     const handleCreateSub = (e: React.FormEvent, aspect_id: number) => {
         e.preventDefault();
-        router.post('/admin/subaspects', { ...newSub, aspect_id }, { onSuccess: () => setNewSub({ aspect_id: '', name: '', type: 'UP' }) });
+        router.post('/admin/subaspects', { ...newSub, aspect_id }, { 
+            onSuccess: () => setNewSub({ aspect_id: '', name: '', type: 'UP', score_weight: '' }),
+            preserveScroll: true 
+        });
     };
     const handleDeleteSub = (id: number) => {
         if(confirm('Hapus sub aspek ini beserta soalnya?')) router.delete(`/admin/subaspects/${id}`);
@@ -45,144 +63,205 @@ export default function CentralManagement({ aspects, organizations }: any) {
 
     const handleEditAspect = (a: any) => {
         const name = prompt('Edit Aspek:', a.name);
-        if(name) router.put(`/admin/aspects/${a.id}`, { name, description: a.description });
+        const weight = prompt('Bobot Nilai (0-100):', a.score_weight);
+        if(name && weight !== null) router.put(`/admin/aspects/${a.id}`, { name, description: a.description, score_weight: weight });
     };
 
     const handleEditSub = (sub: any) => {
         const name = prompt('Edit Sub Aspek:', sub.name);
-        if(name) router.put(`/admin/subaspects/${sub.id}`, { name, aspect_id: sub.aspect_id, type: sub.type });
+        const weight = prompt('Bobot Nilai (0-100):', sub.score_weight);
+        if(name && weight !== null) router.put(`/admin/subaspects/${sub.id}`, { name, aspect_id: sub.aspect_id, type: sub.type, score_weight: weight });
     };
 
     return (
         <>
-            <Head title="Admin Dashboard" />
-            <div className="flex flex-col gap-6 p-6 max-w-7xl mx-auto w-full">
-                <div className="flex justify-between items-end border-b pb-4">
-                    <div className="flex flex-col gap-2">
-                        <h1 className="text-3xl font-bold tracking-tight">Manajemen Sentral</h1>
-                        <p className="text-muted-foreground">Kelola struktur bank soal pengawasan kearsipan.</p>
+            <Head title="Manajemen Kuisioner" />
+            <div className="flex flex-col gap-8 p-8 max-w-[1400px] mx-auto w-full">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-6">
+                    <div>
+                        <h1 className="text-4xl font-black tracking-tight text-foreground/90">Manajemen Kuisioner</h1>
+                        <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                            Bank soal dan struktur penilaian periode 
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-full font-black text-xs uppercase tracking-widest border border-primary/20">
+                                <CalendarDays className="size-3" />
+                                TA {current_period?.name}
+                            </span>
+                        </p>
                     </div>
                 </div>
 
-                <div className="space-y-8">
+                <div className="grid lg:grid-cols-[400px_1fr] gap-8 items-start">
                     {/* Add Aspect Form */}
-                        <div className="bg-card border rounded-xl p-6 shadow-sm">
-                            <h3 className="font-semibold text-lg mb-4">Mulai Tambah Aspek Baru</h3>
-                            <form onSubmit={handleCreateAspect} className="flex gap-4 items-end">
-                                <div className="flex-1">
-                                    <Label>Nama Aspek</Label>
-                                    <Input required placeholder="Contoh: A. Penciptaan Arsip" value={newAspect.name} onChange={e => setNewAspect({...newAspect, name: e.target.value})} />
-                                </div>
-                                <div className="flex-[2]">
-                                    <Label>Deskripsi</Label>
-                                    <Input placeholder="Deskripsi opsional..." value={newAspect.description} onChange={e => setNewAspect({...newAspect, description: e.target.value})} />
-                                </div>
-                                <Button type="submit">Tambah</Button>
-                            </form>
+                    <div className="bg-card border rounded-3xl p-8 shadow-xl sticky top-8">
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="size-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                                <Plus className="size-5" />
+                            </div>
+                            <h3 className="font-black text-xl tracking-tight uppercase">Aspek Baru</h3>
                         </div>
+                        <form onSubmit={handleCreateAspect} className="space-y-6">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Nama Aspek</Label>
+                                <Input required placeholder="Contoh: A. Penciptaan Arsip" value={newAspect.name} onChange={e => setNewAspect({...newAspect, name: e.target.value})} className="h-12 rounded-xl bg-background border-muted/30 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-semibold shadow-sm" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Bobot Nilai (%)</Label>
+                                <div className="relative">
+                                    <Input required type="number" min="0" max="100" placeholder="0-100" value={newAspect.score_weight} onChange={e => setNewAspect({...newAspect, score_weight: e.target.value})} className="h-12 rounded-xl bg-background border-muted/30 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all font-bold pr-10" />
+                                    <Percent className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground opacity-50" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Deskripsi Ringkas</Label>
+                                <textarea placeholder="Deskripsi opsional..." value={newAspect.description} onChange={e => setNewAspect({...newAspect, description: e.target.value})} className="w-full mt-1 border border-muted/30 rounded-xl p-4 text-xs font-semibold focus:ring-4 focus:ring-primary/10 transition-all bg-background min-h-[120px]" />
+                            </div>
+                            <Button type="submit" className="w-full h-14 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
+                                Tambah Aspek
+                            </Button>
+                        </form>
+                    </div>
 
-                        {/* List Aspects */}
-                        <div className="grid gap-6">
-                            {aspects?.map((aspect: any) => {
-                                const isAspectExpanded = expandedAspects.includes(aspect.id);
-                                return (
-                                <div key={aspect.id} className="border rounded-xl bg-card shadow-sm overflow-hidden">
-                                    <div className="flex justify-between items-center p-6 border-b hover:bg-muted/30 transition-colors cursor-pointer" onClick={() => toggleAspect(aspect.id)}>
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-muted-foreground bg-muted p-2 rounded-lg">
-                                                {isAspectExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                    {/* Aspects List */}
+                    <div className="space-y-6">
+                        {aspects?.map((aspect: any) => {
+                            const isAspectExpanded = expandedAspects.includes(aspect.id);
+                            return (
+                                <div key={aspect.id} className={`border rounded-3xl bg-card shadow-lg transition-all duration-300 overflow-hidden ${isAspectExpanded ? 'ring-2 ring-primary/20' : ''}`}>
+                                    <div className="flex justify-between items-center p-6 sm:p-8 cursor-pointer group hover:bg-primary/5" onClick={() => toggleAspect(aspect.id)}>
+                                        <div className="flex items-center gap-6">
+                                            <div className={`p-3 rounded-2xl transition-all ${isAspectExpanded ? 'bg-primary text-white shadow-lg' : 'bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary'}`}>
+                                                {isAspectExpanded ? <ChevronDown size={24} /> : <ChevronRight size={24} />}
                                             </div>
                                             <div>
-                                                <h3 className="text-xl font-bold">{aspect.name}</h3>
-                                                <p className="text-sm text-muted-foreground">{aspect.description || "Tidak ada deskripsi"}</p>
+                                                <div className="flex items-center gap-3">
+                                                    <h3 className="text-2xl font-black tracking-tight group-hover:text-primary transition-colors">{aspect.name}</h3>
+                                                    <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black border border-primary/20">
+                                                        BOBOT: {aspect.score_weight}%
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm font-medium text-muted-foreground opacity-70 mt-1">{aspect.description || "Tidak ada deskripsi rinci"}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                                            <Button variant="outline" size="sm" onClick={() => handleEditAspect(aspect)}>Edit</Button>
-                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteAspect(aspect.id)}>Hapus</Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleEditAspect(aspect)} className="rounded-xl hover:bg-primary/10 hover:text-primary">
+                                                <Pencil className="size-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDeleteAspect(aspect.id)} className="rounded-xl hover:bg-destructive/10 hover:text-destructive">
+                                                <Trash2 className="size-4" />
+                                            </Button>
                                         </div>
                                     </div>
                                     
                                     {isAspectExpanded && (
-                                        <div className="p-6 space-y-6 bg-muted/5">
+                                        <div className="p-8 space-y-8 bg-muted/10 border-t border-muted/20">
                                             {/* Sub Aspects List */}
-                                            {aspect.sub_aspects?.map((sub: any) => {
-                                                const isSubExpanded = expandedSubAspects.includes(sub.id);
-                                                return (
-                                                <div key={sub.id} className="p-4 border rounded-xl bg-background shadow-sm">
-                                                    <div className="flex items-center justify-between cursor-pointer group" onClick={() => toggleSubAspect(sub.id)}>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="text-muted-foreground group-hover:text-primary transition-colors">
-                                                                {isSubExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                                                            </div>
-                                                            <h5 className="font-semibold text-base flex items-center gap-3">
-                                                                {sub.name}
-                                                                <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-                                                                    {sub.type}
-                                                                </span>
-                                                            </h5>
-                                                        </div>
-                                                        <div className="flex items-center gap-4" onClick={e => e.stopPropagation()}>
-                                                            <button onClick={() => handleEditSub(sub)} className="text-primary text-sm hover:underline font-medium">Edit</button>
-                                                            <button onClick={() => handleDeleteSub(sub.id)} className="text-destructive text-sm hover:underline font-medium">Hapus</button>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {isSubExpanded && (
-                                                        <div className="mt-4 pt-4 border-t pl-2 space-y-4">
-                                                            {sub.questions?.length === 0 && (
-                                                                <p className="text-sm text-muted-foreground text-center p-4 bg-muted/20 rounded-lg">Belum ada soal.</p>
-                                                            )}
-                                                            {sub.questions?.map((q: any, i: number) => (
-                                                                <div key={q.id} className="p-4 bg-card rounded-lg border flex items-start gap-4">
-                                                                    <div className="w-7 h-7 shrink-0 bg-primary/10 text-primary flex items-center justify-center font-bold text-sm rounded-md">
-                                                                        {i + 1}
+                                            <div className="grid gap-6">
+                                                {aspect.sub_aspects?.map((sub: any) => {
+                                                    const isSubExpanded = expandedSubAspects.includes(sub.id);
+                                                    return (
+                                                        <div key={sub.id} className="border rounded-2xl bg-background shadow-sm overflow-hidden transition-all">
+                                                            <div className="flex items-center justify-between p-5 cursor-pointer hover:bg-primary/5 transition-colors" onClick={() => toggleSubAspect(sub.id)}>
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className={`transition-colors ${isSubExpanded ? 'text-primary' : 'text-muted-foreground'}`}>
+                                                                        {isSubExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                                                                     </div>
-                                                                    <div className="flex-1">
-                                                                        <p className="font-medium text-sm leading-relaxed">{q.text}</p>
-                                                                        {q.instructions && <p className="text-xs text-muted-foreground mt-2 bg-muted/50 p-2 border-l-2 border-primary/50">Petunjuk: {q.instructions}</p>}
-                                                                    </div>
-                                                                    <div className="flex flex-col gap-3 shrink-0 items-end">
-                                                                        <Link href={`/admin/questions/${q.id}/edit`}>
-                                                                            <button className="text-primary text-xs font-semibold hover:underline bg-primary/10 px-2 py-1 rounded">Edit Soal</button>
-                                                                        </Link>
-                                                                        <button onClick={() => handleDeleteQuestion(q.id)} className="text-destructive text-xs hover:underline">Hapus</button>
+                                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                                                                        <h5 className="font-black text-base tracking-tight">{sub.name}</h5>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-black tracking-widest rounded-md bg-primary/10 text-primary border border-primary/20 uppercase w-fit">
+                                                                                UNIT {sub.type === 'UP' ? 'PENGELOLA' : 'KEARSIPAN'}
+                                                                            </span>
+                                                                            <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-black tracking-widest rounded-md bg-orange-100 text-orange-600 border border-orange-200 uppercase w-fit">
+                                                                                BOBOT: {sub.score_weight}%
+                                                                            </span>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            ))}
-
-                                                            <div className="mt-4 p-4 border border-dashed rounded-lg bg-muted/10 flex justify-between items-center">
-                                                                <p className="text-sm font-semibold text-muted-foreground">Kelola dan Buat Soal Penilaian</p>
-                                                                <Link href={`/admin/questions/create?sub_aspect_id=${sub.id}`}>
-                                                                    <Button size="sm" variant="secondary" className="shadow-sm">+ Tambah Soal</Button>
-                                                                </Link>
+                                                                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                                                                    <Button variant="ghost" size="sm" onClick={() => handleEditSub(sub)} className="h-8 px-2 text-[10px] font-black uppercase text-muted-foreground hover:text-primary transition-colors">Edit</Button>
+                                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteSub(sub.id)} className="h-8 px-2 text-[10px] font-black uppercase text-muted-foreground hover:text-destructive transition-colors">Hapus</Button>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )})}
-                                            
-                                            {/* Add Sub Aspect Form */}
-                                            <form onSubmit={(e) => handleCreateSub(e, aspect.id)} className="flex items-end gap-3 bg-card p-4 rounded-xl border border-dashed mt-4 shadow-sm">
-                                                <div className="flex-1">
-                                                    <Label>Buat Sub Aspek Baru</Label>
-                                                    <Input required placeholder="Contoh: 1. Tata Naskah Dinas" value={newSub.aspect_id === aspect.id.toString() ? newSub.name : ''} onChange={e => setNewSub({aspect_id: aspect.id.toString(), name: e.target.value, type: newSub.type})} />
-                                                </div>
-                                                <div>
-                                                    <Label>Jenis</Label>
-                                                    <select className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm transition-colors mt-1" value={newSub.aspect_id === aspect.id.toString() ? newSub.type : 'UP'} onChange={e => setNewSub({...newSub, type: e.target.value})}>
-                                                        <option value="UP">UP</option>
-                                                        <option value="UK">UK</option>
-                                                    </select>
-                                                </div>
-                                                <Button type="submit" variant="default" className="shadow-sm">Simpan</Button>
-                                            </form>
+                                                            
+                                                            {isSubExpanded && (
+                                                                <div className="p-5 pt-0 space-y-4">
+                                                                    <div className="space-y-4">
+                                                                        {sub.questions?.length === 0 && (
+                                                                            <p className="text-xs font-medium text-muted-foreground text-center py-8 bg-muted/30 rounded-xl border border-dashed">Belum ada soal tersedia.</p>
+                                                                        )}
+                                                                        {sub.questions?.map((q: any, i: number) => (
+                                                                            <div key={q.id} className="p-5 bg-card rounded-2xl border flex items-center gap-4 hover:border-primary/50 transition-colors shadow-sm relative group/q">
+                                                                                <div className="size-8 shrink-0 bg-primary/10 text-primary flex items-center justify-center font-black text-xs rounded-xl border border-primary/20">
+                                                                                    {i + 1}
+                                                                                </div>
+                                                                                <div className="flex-1 space-y-3">
+                                                                                    <p className="font-bold text-sm leading-relaxed text-foreground/90">{q.text}</p>
+                                                                                    {/* {q.instructions && (
+                                                                                        <div className="flex items-start gap-2 bg-muted/50 p-3 rounded-xl border-l-4 border-primary">
+                                                                                            <HelpCircle className="size-4 text-primary shrink-0 mt-0.5" />
+                                                                                            <p className="text-[11px] font-bold text-muted-foreground leading-relaxed">{q.instructions}</p>
+                                                                                        </div>
+                                                                                    )} */}
+                                                                                </div>
+                                                                                <div className="flex flex-col gap-2 shrink-0 self-start">
+                                                                                    <Link href={`/admin/questions/${q.id}/edit`}>
+                                                                                        <Button variant="secondary" size="sm" className="h-8 px-3 text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-primary hover:text-white transition-all">
+                                                                                            Edit Soal
+                                                                                        </Button>
+                                                                                    </Link>
+                                                                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteQuestion(q.id)} className="h-8 px-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-destructive transition-all">
+                                                                                        Hapus
+                                                                                    </Button>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
 
+                                                                        <div className="mt-6 flex justify-center">
+                                                                            <Link href={`/admin/questions/create?sub_aspect_id=${sub.id}`}>
+                                                                                <Button variant="outline" className="rounded-xl border-dashed border-2 hover:bg-primary/5 hover:border-primary transition-all flex items-center gap-2 font-black text-xs uppercase tracking-widest px-6 h-12 shadow-sm">
+                                                                                    <Plus className="size-4" />
+                                                                                    Tambah Soal
+                                                                                </Button>
+                                                                            </Link>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                            
+                                            {/* Add Sub Aspect Section */}
+                                            <div className="bg-primary/5 border border-primary/20 rounded-3xl p-6">
+                                                <h4 className="font-black text-xs uppercase tracking-[0.2em] text-primary/60 mb-4 ml-1">Struktur Sub-Aspek</h4>
+                                                <form onSubmit={(e) => handleCreateSub(e, aspect.id)} className="flex flex-col sm:flex-row items-end gap-3">
+                                                    <div className="flex-[3] w-full space-y-2">
+                                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Nama Sub-Aspek</Label>
+                                                        <Input required placeholder="Contoh: 1. Tata Naskah Dinas" value={newSub.aspect_id === aspect.id.toString() ? newSub.name : ''} onChange={e => setNewSub({aspect_id: aspect.id.toString(), name: e.target.value, type: newSub.type, score_weight: newSub.score_weight})} className="h-11 rounded-xl bg-background border-primary/10 font-bold focus:ring-4 focus:ring-primary/10 shadow-sm" />
+                                                    </div>
+                                                    <div className="flex-1 w-full space-y-2">
+                                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Bobot (%)</Label>
+                                                        <Input required type="number" min="0" max="100" placeholder="%" value={newSub.aspect_id === aspect.id.toString() ? newSub.score_weight : ''} onChange={e => setNewSub({...newSub, score_weight: e.target.value})} className="h-11 rounded-xl bg-background border-primary/10 font-black focus:ring-4 focus:ring-primary/10 shadow-sm" />
+                                                    </div>
+                                                    <div className="flex-1 w-full space-y-2">
+                                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Jenis</Label>
+                                                        <select className="flex h-11 w-full rounded-xl border border-primary/10 bg-background px-3 py-1 text-[10px] font-black transition-colors focus:ring-4 focus:ring-primary/10 shadow-sm uppercase tracking-widest" value={newSub.aspect_id === aspect.id.toString() ? newSub.type : 'UP'} onChange={e => setNewSub({...newSub, type: e.target.value})}>
+                                                            <option value="UP">UNIT PENGELOLA</option>
+                                                            <option value="UK">UNIT KEARSIPAN</option>
+                                                        </select>
+                                                    </div>
+                                                    <Button type="submit" className="h-11 w-full sm:w-auto px-6 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md active:scale-95 transition-all">
+                                                        Simpan Sub
+                                                    </Button>
+                                                </form>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
-                            )})}
-                        </div>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
         </>
@@ -192,7 +271,7 @@ export default function CentralManagement({ aspects, organizations }: any) {
 CentralManagement.layout = {
     breadcrumbs: [
         {
-            title: 'Manajemen Sentral',
+            title: 'Manajemen Kuisioner',
             href: '/admin/assessments',
         },
     ],

@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { 
     BookOpen, 
     FolderGit2, 
@@ -97,7 +97,23 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="py-4 space-y-4 overflow-hidden">
+            <SidebarContent className="py-2 space-y-4 overflow-hidden">
+                {/* Period Switcher Section */}
+                <div className="px-4 py-2">
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/10 shadow-inner">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2 block px-1">Periode Pengawasan</label>
+                        <select 
+                            className="w-full px-4 bg-sidebar border-none text-xs font-bold text-white focus:ring-1 focus:ring-primary rounded-lg h-9 appearance-none cursor-pointer"
+                            value={usePage<any>().props.current_period?.id || ''}
+                            onChange={(e) => router.post('/admin/switch-period', { period_id: e.target.value })}
+                        >
+                            {usePage<any>().props.periods?.map((p: any) => (
+                                <option key={p.id} value={p.id} className="bg-sidebar-accent text-sidebar-foreground">TA {p.name} {p.is_active ? '(Aktif)' : ''}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
                 <NavMain label="Utama" items={commonNav} />
                 
                 {user?.role === 'admin' && (

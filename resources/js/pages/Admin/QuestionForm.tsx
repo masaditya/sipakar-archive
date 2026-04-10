@@ -4,8 +4,70 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { FilePreviewModal } from '@/components/file-preview-modal';
-import { useState } from 'react';
-import { Eye, FileText } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { 
+    Eye, 
+    FileText, 
+    ArrowLeft, 
+    UploadCloud, 
+    X, 
+    Info, 
+    HelpCircle, 
+    CheckCircle2, 
+    Plus,
+    FileCheck
+} from 'lucide-react';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+
+// Custom Simple Editor Component to avoid findDOMNode issue in React 19
+function RichTextEditor({ value, onChange, placeholder }: { value: string, onChange: (val: string) => void, placeholder?: string }) {
+    const editorRef = useRef<HTMLDivElement>(null);
+    const quillRef = useRef<Quill | null>(null);
+
+    useEffect(() => {
+        if (editorRef.current && !quillRef.current) {
+            quillRef.current = new Quill(editorRef.current, {
+                theme: 'snow',
+                placeholder: placeholder,
+                modules: {
+                    toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        ['link', 'image', 'clean'],
+                    ],
+                },
+            });
+
+            quillRef.current.on('text-change', () => {
+                const html = editorRef.current?.children[0].innerHTML || '';
+                onChange(html);
+            });
+        }
+        
+        // Update content if changed from outside (only if different to prevent cursor jumping)
+        if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+            // Only update if the sanitized content is different to avoid infinite loops
+            // But for simplicity in this case, we trust the internal state unless external reset
+            if (value === '') {
+                quillRef.current.root.innerHTML = '';
+            }
+        }
+    }, []);
+
+    // Initial value set
+    useEffect(() => {
+        if (quillRef.current && value && quillRef.current.root.innerHTML === '<p><br></p>') {
+            quillRef.current.root.innerHTML = value;
+        }
+    }, [value]);
+
+    return (
+        <div className="bg-background">
+            <div ref={editorRef} />
+        </div>
+    );
+}
 
 export default function QuestionForm({ question, sub_aspect_id }: any) {
     const isEditing = !!question;
@@ -18,15 +80,16 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
         legal_basis: question?.legal_basis || '',
         example_file: null as File | null,
         options: question?.options?.length ? question.options : [
-            { score: 100, text: 'Sesuai 100%' },
-            { score: 70, text: 'Sesuai sebagian besar' },
-            { score: 50, text: 'Sesuai sebagian' },
+            { score: 0, text: 'Tidak sesuai' },
             { score: 20, text: 'Kurang sesuai' },
-            { score: 0, text: 'Tidak sesuai' }
+            { score: 50, text: 'Sesuai sebagian' },
+            { score: 70, text: 'Sesuai sebagian besar' },
+            { score: 100, text: 'Sesuai 100%' },
         ]
     });
 
     const [previewModal, setPreviewModal] = useState({ isOpen: false, url: '', name: '' });
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleOptionChange = (index: number, field: string, value: string | number) => {
         const newOptions = [...data.options];
@@ -44,7 +107,7 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
+        if (e.target.files && e.target.files.length > 0) {
             setData('example_file', e.target.files[0]);
         }
     };
@@ -62,151 +125,234 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
     return (
         <>
             <Head title={isEditing ? 'Edit Soal' : 'Tambah Soal Baru'} />
-            <div className="p-6 max-w-4xl mx-auto w-full">
-                <div className="mb-6 flex gap-4 items-center">
-                    <Link href="/dashboard">
-                        <Button variant="outline" size="sm">← Kembali</Button>
-                    </Link>
-                    <h1 className="text-2xl font-bold">{isEditing ? 'Edit Soal Penilaian' : 'Buat Soal Penilaian Baru'}</h1>
+            <div className="flex flex-col gap-10 p-8 max-w-[1200px] mx-auto w-full font-sans">
+                <div className="flex justify-between items-center border-b pb-6">
+                    <div className="flex items-center gap-6">
+                        <Link href="/admin/assessments">
+                            <div className="size-12 rounded-2xl bg-muted/50 flex items-center justify-center hover:bg-primary/10 hover:text-primary transition-all cursor-pointer border border-transparent hover:border-primary/20 text-foreground">
+                                <ArrowLeft className="size-5" />
+                            </div>
+                        </Link>
+                        <div>
+                            <h1 className="text-4xl font-black tracking-tight text-foreground/90 uppercase">{isEditing ? 'Edit Soal Penilaian' : 'Buat Soal Baru'}</h1>
+                            <p className="text-muted-foreground font-medium mt-1">Konfigurasi butir pertanyaan, instruksi, dan bobot jawaban.</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div className="bg-card border rounded-xl shadow-sm p-6 overflow-hidden">
-                    <form onSubmit={onSubmit} className="space-y-6">
-                        
+                <form onSubmit={onSubmit} className="grid lg:grid-cols-[1fr_400px] gap-10 items-start pb-20">
+                    <div className="space-y-10">
+                        {/* Core Question Content */}
+                        <CardWrapper title="Inti Pertanyaan" icon={<HelpCircle className="size-5" />}>
+                            <div className="space-y-8">
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Teks Pertanyaan / Soal</Label>
+                                    <textarea 
+                                        className="w-full h-32 rounded-2xl bg-muted/5 p-5 font-bold text-lg border-2 border-muted focus:border-primary focus:ring-8 focus:ring-primary/5 transition-all focus:outline-none"
+                                        placeholder="Tuliskan pertanyaan pengawasan di sini..."
+                                        required
+                                        value={data.text}
+                                        onChange={e => setData('text', e.target.value)}
+                                    />
+                                    {errors.text && <p className="text-xs text-destructive font-bold mt-1 px-1">{errors.text}</p>}
+                                </div>
+
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Petunjuk Pengisian</Label>
+                                    <div className="bg-muted/5 rounded-2xl border-2 border-muted overflow-hidden focus-within:ring-8 focus-within:ring-primary/5 focus-within:border-primary transition-all">
+                                        <RichTextEditor 
+                                            value={data.instructions} 
+                                            onChange={val => setData('instructions', val)}
+                                            placeholder="Berikan instruksi tambahan cara menjawab soal ini..."
+                                        />
+                                    </div>
+                                    {errors.instructions && <p className="text-xs text-destructive font-bold mt-1 px-1">{errors.instructions}</p>}
+                                </div>
+
+                                <div className="space-y-3">
+                                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Dasar Hukum / Regulasi</Label>
+                                    <div className="bg-muted/5 rounded-2xl border-2 border-muted overflow-hidden focus-within:ring-8 focus-within:ring-primary/5 focus-within:border-primary transition-all">
+                                        <RichTextEditor 
+                                            value={data.legal_basis} 
+                                            onChange={val => setData('legal_basis', val)}
+                                            placeholder="Tuliskan dasar hukum atau regulasi terkait..."
+                                        />
+                                    </div>
+                                    {errors.legal_basis && <p className="text-xs text-destructive font-bold mt-1 px-1">{errors.legal_basis}</p>}
+                                </div>
+                            </div>
+                        </CardWrapper>
+
+                        {/* Options Section */}
                         <div className="space-y-4">
-                            <div>
-                                <Label className="text-lg">Teks Pertanyaan / Soal</Label>
-                                <textarea 
-                                    className="w-full mt-2 border rounded-md p-3 min-h-[100px] text-sm focus:outline-primary"
-                                    placeholder="Tuliskan pertanyaan pengawasan di sini..."
-                                    required
-                                    value={data.text}
-                                    onChange={e => setData('text', e.target.value)}
-                                />
-                                {errors.text && <p className="text-sm text-destructive mt-1">{errors.text}</p>}
+                            <div className="flex justify-between items-center px-1">
+                                <div className="flex items-center gap-3 text-foreground">
+                                    <CheckCircle2 className="size-5 text-primary" />
+                                    <h3 className="font-black text-xl uppercase tracking-tight">Opsi Jawaban</h3>
+                                </div>
+                                <Button type="button" variant="outline" className="rounded-xl border-dashed h-9 text-[10px] font-black uppercase tracking-widest px-4" onClick={addOption}>
+                                    <Plus className="size-3 mr-2" /> Tambah Opsi
+                                </Button>
                             </div>
 
-                            <div>
-                                <Label className="text-lg">Petunjuk Pengisian (Opsional)</Label>
-                                <textarea 
-                                    className="w-full mt-2 border rounded-md p-3 text-sm focus:outline-primary bg-muted/20"
-                                    placeholder="Berikan instruksi tambahan cara menjawab soal ini..."
-                                    value={data.instructions}
-                                    onChange={e => setData('instructions', e.target.value)}
-                                />
-                                {errors.instructions && <p className="text-sm text-destructive mt-1">{errors.instructions}</p>}
-                            </div>
-
-                            <div>
-                                <Label className="text-lg">Dasar Hukum (Opsional)</Label>
-                                <textarea 
-                                    className="w-full mt-2 border rounded-md p-3 text-sm focus:outline-primary bg-muted/20"
-                                    placeholder="Tuliskan dasar hukum atau regulasi terkait soal ini..."
-                                    value={data.legal_basis}
-                                    onChange={e => setData('legal_basis', e.target.value)}
-                                />
-                                {errors.legal_basis && <p className="text-sm text-destructive mt-1">{errors.legal_basis}</p>}
-                            </div>
-
-                            <div>
-                                <Label className="text-lg">Contoh Bukti Dukung (File Opsional)</Label>
-                                <p className="text-sm text-muted-foreground mb-2">Unggah PDF atau dokumen sebagai contoh bukti dukung yang bisa dipreview oleh pengguna.</p>
-                                <Input 
-                                    type="file" 
-                                    onChange={handleFileChange}
-                                />
-                                {errors.example_file && <p className="text-sm text-destructive mt-1">{errors.example_file}</p>}
-                                
-                                {data.example_file && (
-                                    <div className="mt-2 flex items-center gap-2">
-                                        <Button 
-                                            type="button" 
-                                            variant="secondary" 
-                                            size="sm" 
-                                            className="text-xs"
-                                            onClick={() => openPreview(URL.createObjectURL(data.example_file as File), (data.example_file as File).name)}
-                                        >
-                                            <Eye className="w-4 h-4 mr-1" /> Pratinjau File Baru
-                                        </Button>
-                                        <span className="text-xs text-muted-foreground italic truncate max-w-[200px]">{(data.example_file as File).name}</span>
-                                    </div>
-                                )}
-
-                                {isEditing && question.example_file_path && !data.example_file && (
-                                    <div className="mt-2 text-sm bg-blue-50 text-blue-800 p-2 rounded-md border border-blue-200 w-fit flex items-center gap-3">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold">File Aktif di Server</span>
-                                            <span className="text-[10px] text-blue-600 uppercase font-bold tracking-widest opacity-70 italic">Sudah tersimpan</span>
-                                        </div>
-                                        <Button 
-                                            type="button" 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            className="text-blue-800 hover:bg-blue-100"
-                                            onClick={() => openPreview(`/storage/${question.example_file_path}`, 'Contoh Bukti Aktif')}
-                                        >
-                                            <Eye className="w-4 h-4 mr-1" /> Lihat Sekarang
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="border-t pt-6 mt-6">
-                            <div className="flex justify-between items-center mb-4">
-                                <Label className="text-lg">Opsi Jawaban & Bobot Nilai</Label>
-                                <Button type="button" variant="outline" size="sm" onClick={addOption}>+ Tambah Opsi</Button>
-                            </div>
-                            {errors.options && <p className="text-sm text-destructive mb-4">{errors.options}</p>}
-                            
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 {data.options.map((opt: any, index: number) => (
-                                    <div key={index} className="flex gap-4 items-center bg-muted/10 p-3 rounded-lg border">
-                                        <div className="w-24">
-                                            <Label className="text-xs text-muted-foreground">Bobot (0-100)</Label>
-                                            <Input 
-                                                type="number" 
-                                                required 
-                                                value={opt.score} 
-                                                onChange={e => handleOptionChange(index, 'score', e.target.value)}
-                                            />
+                                    <div key={index} className="group relative flex gap-4 items-center bg-card border-2 border-muted p-5 rounded-3xl transition-all hover:border-primary/40 hover:shadow-xl">
+                                        <div className="w-24 shrink-0">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 mb-2 block">Bobot</Label>
+                                            <div className="relative">
+                                                <Input 
+                                                    type="number" 
+                                                    required 
+                                                    min="0"
+                                                    max="100"
+                                                    value={opt.score} 
+                                                    onChange={e => handleOptionChange(index, 'score', e.target.value)}
+                                                    className="h-11 rounded-xl font-black text-center pr-2"
+                                                />
+                                            </div>
                                         </div>
                                         <div className="flex-1">
-                                            <Label className="text-xs text-muted-foreground">Teks Opsi Jawaban</Label>
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 mb-2 block">Teks Jawaban</Label>
                                             <Input 
                                                 required 
                                                 value={opt.text} 
                                                 onChange={e => handleOptionChange(index, 'text', e.target.value)}
+                                                className="h-11 rounded-xl font-bold"
+                                                placeholder="Deskripsi pilihan jawaban..."
                                             />
                                         </div>
                                         {data.options.length > 2 && (
-                                            <Button type="button" variant="destructive" size="sm" className="mt-5" onClick={() => removeOption(index)}>
-                                                Hapus
+                                            <Button type="button" variant="ghost" size="icon" className="h-10 w-10 mt-6 rounded-xl text-destructive hover:bg-destructive/10" onClick={() => removeOption(index)}>
+                                                <X className="size-4" />
                                             </Button>
                                         )}
                                     </div>
                                 ))}
+                                {errors.options && <p className="text-sm text-destructive font-bold px-1">{errors.options}</p>}
                             </div>
                         </div>
+                    </div>
 
-                        <div className="border-t pt-6 space-y-4">
-                            {progress && (
-                                <div className="space-y-2">
-                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-primary">
-                                        <span>Menyimpan ke Server...</span>
-                                        <span>{progress.percentage}%</span>
+                    {/* Sidebar / Assets */}
+                    <div className="space-y-8 sticky top-8">
+                        {/* File Upload Area */}
+                        <div className="bg-card border-2 border-dashed border-muted rounded-[2.5rem] p-8 space-y-6 text-center shadow-sm">
+                            <div className="size-20 bg-primary/10 rounded-[2rem] flex items-center justify-center text-primary mx-auto border border-primary/20">
+                                <UploadCloud className="size-10" />
+                            </div>
+                            <div className="space-y-2">
+                                <h4 className="font-black text-lg tracking-tight text-foreground">Contoh Bukti Dukung</h4>
+                                <p className="text-[11px] text-muted-foreground font-medium px-4">Lampirkan file PDF / Dokumen sebagai referensi pengisian oleh pelaksana.</p>
+                            </div>
+
+                            <input 
+                                type="file" 
+                                className="hidden" 
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                            />
+
+                            {!data.example_file ? (
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    className="w-full h-14 rounded-2xl border-2 font-black text-xs uppercase tracking-widest hover:bg-primary/5 hover:border-primary transition-all"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    Pilih File
+                                </Button>
+                            ) : (
+                                <div className="space-y-3">
+                                    <div className="p-4 bg-primary/5 rounded-2xl border-2 border-primary/20 relative group">
+                                        <div className="flex items-center gap-3 text-left">
+                                            <div className="size-10 bg-primary text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
+                                                <FileCheck className="size-5" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[11px] font-black truncate text-foreground">{data.example_file.name}</p>
+                                                <p className="text-[9px] font-bold text-muted-foreground">{(data.example_file.size / 1024).toFixed(1)} KB</p>
+                                            </div>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setData('example_file', null)}
+                                                className="size-8 rounded-lg hover:bg-destructive/20 text-destructive flex items-center justify-center transition-colors"
+                                            >
+                                                <X className="size-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <Progress value={progress.percentage} className="h-2" />
+                                    <Button 
+                                        type="button"
+                                        className="w-full h-12 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                                        onClick={() => openPreview(URL.createObjectURL(data.example_file as File), (data.example_file as File).name)}
+                                    >
+                                        <Eye className="size-4" /> Pratinjau File
+                                    </Button>
                                 </div>
                             )}
-                            <div className="flex justify-end">
-                                <Button type="submit" size="lg" disabled={processing} className="px-8">
-                                    {processing ? 'Sedang Memproses...' : 'Simpan Pertanyaan'}
-                                </Button>
-                            </div>
+
+                            {isEditing && question.example_file_path && !data.example_file && (
+                                <div className="p-4 bg-muted/30 rounded-2xl border border-muted space-y-3">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Contoh Aktif di Server</p>
+                                    <Button 
+                                        type="button" 
+                                        variant="secondary" 
+                                        size="sm" 
+                                        className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                                        onClick={() => openPreview(`/storage/${question.example_file_path}`, 'Contoh Bukti Aktif')}
+                                    >
+                                        <Eye className="size-4 mr-2" /> Lihat Current
+                                    </Button>
+                                </div>
+                            )}
                         </div>
-                    </form>
-                </div>
+
+                        {/* Submit Section */}
+                        <div className="bg-foreground text-background rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
+                            <div className="flex items-center gap-4">
+                                <div className="size-12 bg-primary animate-pulse rounded-2xl flex items-center justify-center text-white">
+                                    <FileText className="size-6" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h4 className="font-black text-xl tracking-tight leading-none uppercase italic text-background">Finalisasi</h4>
+                                    <p className="text-[10px] text-background/60 font-bold uppercase tracking-widest">Validasi & Simpan</p>
+                                </div>
+                            </div>
+
+                            {progress && (
+                                <div className="space-y-3">
+                                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-primary">
+                                        <span>Mengunggah...</span>
+                                        <span>{progress.percentage}%</span>
+                                    </div>
+                                    <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
+                                        <div className="h-full bg-primary transition-all duration-300" style={{ width: `${progress.percentage}%` }} />
+                                    </div>
+                                </div>
+                            )}
+
+                            <Button 
+                                type="submit" 
+                                size="lg" 
+                                disabled={processing} 
+                                className="w-full h-16 rounded-2xl bg-primary text-white hover:bg-primary/90 transition-all shadow-xl active:scale-[0.98] font-black uppercase text-xs tracking-[0.2em] border-none"
+                            >
+                                {processing ? 'Memproses...' : (isEditing ? 'Perbarui Soal' : 'Simpan Soal')}
+                            </Button>
+                            
+                            <p className="text-[9px] text-center font-bold text-background/40 uppercase tracking-widest">Pastikan semua kolom mandatory terisi.</p>
+                        </div>
+
+                        <div className="p-6 bg-muted/20 rounded-3xl border flex gap-4">
+                            <Info className="size-5 text-primary shrink-0 mt-0.5" />
+                            <p className="text-[11px] font-medium leading-relaxed text-muted-foreground">
+                                Perubahan pada soal akan langsung berdampak pada seluruh kuisioner pelaksana di periode ini. Pastikan tidak mengubah konteks pertanyaan secara radikal jika periode sudah berjalan.
+                            </p>
+                        </div>
+                    </div>
+                </form>
             </div>
 
             <FilePreviewModal 
@@ -215,7 +361,39 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
                 fileUrl={previewModal.url}
                 fileName={previewModal.name}
             />
+
+            <style>{`
+                .ql-container {
+                    font-family: inherit;
+                    font-size: 0.875rem;
+                }
+                .ql-editor {
+                    min-height: 250px;
+                }
+                .ql-toolbar.ql-snow {
+                    border: none;
+                    border-bottom: 2px solid var(--muted);
+                    padding: 8px 16px;
+                }
+                .ql-container.ql-snow {
+                    border: none;
+                }
+            `}</style>
         </>
+    );
+}
+
+function CardWrapper({ title, icon, children }: { title: string, icon: React.ReactNode, children: React.ReactNode }) {
+    return (
+        <div className="bg-card border-none rounded-[2.5rem] shadow-2xl p-10 space-y-8 overflow-hidden">
+            <div className="flex items-center gap-4 text-foreground">
+                <div className="size-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                    {icon}
+                </div>
+                <h3 className="font-black text-2xl tracking-tight uppercase">{title}</h3>
+            </div>
+            {children}
+        </div>
     );
 }
 
