@@ -386,9 +386,6 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                                     </CardContent>
                                 </Card>
                             )}
-
-
-
                         </div>
                     </div>
                 </div>

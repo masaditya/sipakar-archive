@@ -22,7 +22,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/admin/assessments', [\App\Http\Controllers\AdminCMSController::class, 'centralManagement'])->name('admin.assessments');
         Route::get('/admin/users', [\App\Http\Controllers\AdminCMSController::class, 'userManagement'])->name('admin.users');
+        Route::get('/admin/users/export', [\App\Http\Controllers\AdminCMSController::class, 'exportUsers'])->name('admin.users.export');
         Route::post('/admin/users', [\App\Http\Controllers\AdminCMSController::class, 'storeUser']);
+        Route::post('/admin/users/bulk-delete', [\App\Http\Controllers\AdminCMSController::class, 'bulkDestroyUsers'])->name('admin.users.bulk_delete');
         Route::put('/admin/users/{user}', [\App\Http\Controllers\AdminCMSController::class, 'updateUser']);
         Route::delete('/admin/users/{user}', [\App\Http\Controllers\AdminCMSController::class, 'destroyUser']);
 

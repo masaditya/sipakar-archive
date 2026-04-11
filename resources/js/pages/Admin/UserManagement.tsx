@@ -3,13 +3,15 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, Pencil, Trash2, X, Shield, UserCircle, Mail, Building2 } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, Shield, UserCircle, Mail, Building2, Download, Trash } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function UserManagement({ users, organizations, filters }: any) {
     const initialFormState = { name: '', username: '', email: '', password: '', role: 'user', organization_id: '' };
     const [formData, setFormData] = useState(initialFormState);
     const [editingUser, setEditingUser] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState(filters?.search || '');
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,6 +48,35 @@ export default function UserManagement({ users, organizations, filters }: any) {
         router.get('/admin/users', { search: searchTerm }, { preserveState: true });
     };
 
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedIds(users.data.map((u: any) => u.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectUser = (id: number, checked: boolean) => {
+        if (checked) {
+            setSelectedIds(prev => [...prev, id]);
+        } else {
+            setSelectedIds(prev => prev.filter(i => i !== id));
+        }
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        if (confirm(`Yakin ingin menghapus ${selectedIds.length} user terpilih?`)) {
+            router.post('/admin/users/bulk-delete', { ids: selectedIds }, {
+                onSuccess: () => setSelectedIds([])
+            });
+        }
+    };
+
+    const handleExport = () => {
+        window.location.href = '/admin/users/export';
+    };
+
     useEffect(() => {
         if (searchTerm === '' && filters?.search) {
              router.get('/admin/users', {}, { preserveState: true });
@@ -60,6 +91,12 @@ export default function UserManagement({ users, organizations, filters }: any) {
                     <div>
                         <h1 className="text-4xl font-black tracking-tight text-foreground/90">Manajemen Pengguna</h1>
                         <p className="text-muted-foreground mt-1">Kelola akun admin dan pelaksana sistem pengawasan kearsipan.</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Button onClick={handleExport} variant="outline" className="rounded-xl font-bold uppercase tracking-widest text-[10px] h-11 px-6 shadow-sm hover:bg-primary hover:text-white transition-all">
+                            <Download className="mr-2 size-4" />
+                            Export Data
+                        </Button>
                     </div>
                 </div>
 
@@ -144,11 +181,37 @@ export default function UserManagement({ users, organizations, filters }: any) {
                         </div>
 
                         <div className="bg-card border rounded-3xl overflow-hidden shadow-xl">
+                            {selectedIds.length > 0 && (
+                                <div className="p-4 bg-primary/10 border-b border-primary/20 flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-300">
+                                    <div className="flex items-center gap-4 ml-2">
+                                        <div className="px-3 py-1 bg-primary text-white rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                            {selectedIds.length} Terpilih
+                                        </div>
+                                    </div>
+                                    <Button onClick={handleBulkDelete} variant="destructive" size="sm" className="rounded-xl font-bold uppercase tracking-widest text-[10px] px-6 h-9">
+                                        <Trash className="mr-2 size-3" />
+                                        Hapus Terpilih
+                                    </Button>
+                                </div>
+                            )}
+                            <div className="p-4 border-b bg-muted/20 flex items-center gap-4">
+                                <Checkbox 
+                                    checked={selectedIds.length === users.data?.length && users.data?.length > 0}
+                                    onCheckedChange={handleSelectAll}
+                                    className="rounded-md border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Pilih Semua</span>
+                            </div>
                             <div className="divide-y divide-muted/10 bg-background">
                                 {users.data?.map((u: any) => (
-                                    <div key={u.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:bg-primary/5 transition-colors group">
-                                        <div className="flex gap-4 items-center">
-                                            <div className="size-12 rounded-2xl bg-muted/50 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-all">
+                                    <div key={u.id} className={`p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 hover:bg-primary/5 transition-colors group ${selectedIds.includes(u.id) ? 'bg-primary/5 border-l-4 border-l-primary' : 'border-l-4 border-l-transparent'}`}>
+                                        <div className="flex gap-4 items-center flex-1">
+                                            <Checkbox 
+                                                checked={selectedIds.includes(u.id)}
+                                                onCheckedChange={(checked) => handleSelectUser(u.id, !!checked)}
+                                                className="rounded-md border-muted-foreground/30 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                            />
+                                            <div className="size-12 rounded-2xl bg-muted/50 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-all shrink-0">
                                                 {u.role === 'admin' ? <Shield className="size-6" /> : <UserCircle className="size-6" />}
                                             </div>
                                             <div className="space-y-1">

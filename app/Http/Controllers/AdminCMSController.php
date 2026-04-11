@@ -127,6 +127,50 @@ class AdminCMSController extends Controller
         return back()->with('success', 'User deleted.');
     }
 
+    public function bulkDestroyUsers(Request $request) {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:users,id'
+        ]);
+        User::whereIn('id', $request->ids)->delete();
+        return back()->with('success', count($request->ids) . ' users deleted.');
+    }
+
+    public function exportUsers() {
+        $users = User::with('organization')->orderBy('name', 'asc')->get();
+        
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=users_export_" . date('Y-m-d') . ".csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $columns = ['ID', 'Nama', 'Username', 'Email', 'Role', 'Organisasi', 'Created At'];
+
+        $callback = function() use($users, $columns) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $columns);
+
+            foreach ($users as $user) {
+                $row['ID']         = $user->id;
+                $row['Nama']       = $user->name;
+                $row['Username']   = $user->username;
+                $row['Email']      = $user->email;
+                $row['Role']       = $user->role;
+                $row['Organisasi'] = $user->organization->name ?? '-';
+                $row['Created At'] = $user->created_at;
+
+                fputcsv($file, array_values($row));
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     // === ASPECT CRUD ===
     public function storeAspect(Request $request) {
         $validated = $request->validate([
@@ -199,6 +243,7 @@ class AdminCMSController extends Controller
             'text' => 'required|string',
             'instructions' => 'nullable|string',
             'legal_basis' => 'nullable|string',
+            'helper' => 'nullable|string',
             'example_files' => 'nullable|array',
             'example_files.*' => 'nullable|file',
             'options' => 'required|array|min:5',
@@ -223,6 +268,7 @@ class AdminCMSController extends Controller
             'text' => $validated['text'],
             'instructions' => $validated['instructions'],
             'legal_basis' => $validated['legal_basis'],
+            'helper' => $request->helper,
             'example_file_paths' => $paths
         ]);
         
@@ -238,6 +284,7 @@ class AdminCMSController extends Controller
             'text' => 'required|string',
             'instructions' => 'nullable|string',
             'legal_basis' => 'nullable|string',
+            'helper' => 'nullable|string',
             'example_files' => 'nullable|array',
             'example_files.*' => 'nullable|file',
             'existing_example_files' => 'nullable|array',
@@ -264,6 +311,7 @@ class AdminCMSController extends Controller
             'text' => $validated['text'],
             'instructions' => $validated['instructions'],
             'legal_basis' => $validated['legal_basis'],
+            'helper' => $request->helper,
             'example_file_paths' => $paths
         ]);
 
