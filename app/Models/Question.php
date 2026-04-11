@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
-#[Fillable(['sub_aspect_id', 'text', 'instructions', 'legal_basis', 'example_file_path'])]
+#[Fillable(['sub_aspect_id', 'text', 'instructions', 'legal_basis', 'example_file_paths'])]
 class Question extends Model
 {
+    protected $casts = [
+        'example_file_paths' => 'array',
+    ];
     public function subAspect()
     {
         return $this->belongsTo(SubAspect::class);

@@ -78,7 +78,8 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
         text: question?.text || '',
         instructions: question?.instructions || '',
         legal_basis: question?.legal_basis || '',
-        example_file: null as File | null,
+        example_files: [] as File[],
+        existing_example_files: question?.example_file_paths || [],
         options: question?.options?.length ? question.options : [
             { score: 0, text: 'Tidak sesuai' },
             { score: 20, text: 'Kurang sesuai' },
@@ -108,8 +109,20 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            setData('example_file', e.target.files[0]);
+            setData('example_files', [...data.example_files, ...Array.from(e.target.files)]);
         }
+    };
+
+    const removeNewFile = (index: number) => {
+        const newFiles = [...data.example_files];
+        newFiles.splice(index, 1);
+        setData('example_files', newFiles);
+    };
+
+    const removeExistingFile = (index: number) => {
+        const newExisting = [...data.existing_example_files];
+        newExisting.splice(index, 1);
+        setData('existing_example_files', newExisting);
     };
 
     const openPreview = (url: string, name: string) => {
@@ -251,62 +264,67 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
                                 className="hidden" 
                                 ref={fileInputRef}
                                 onChange={handleFileChange}
-                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png"
+                                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.png,.jpeg,.mp4,.mov,.avi"
+                                multiple
                             />
 
-                            {!data.example_file ? (
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
-                                    className="w-full h-14 rounded-2xl border-2 font-black text-xs uppercase tracking-widest hover:bg-primary/5 hover:border-primary transition-all"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    Pilih File
-                                </Button>
-                            ) : (
-                                <div className="space-y-3">
-                                    <div className="p-4 bg-primary/5 rounded-2xl border-2 border-primary/20 relative group">
+                            <Button 
+                                type="button" 
+                                variant="outline" 
+                                className="w-full h-14 rounded-2xl border-2 font-black text-xs uppercase tracking-widest hover:bg-primary/5 hover:border-primary transition-all mb-4"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                <Plus className="size-4 mr-2" /> Tambah File
+                            </Button>
+
+                            <div className="space-y-3">
+                                {data.example_files.map((f: File, i: number) => (
+                                    <div key={`new-${i}`} className="p-4 bg-primary/5 rounded-2xl border-2 border-primary/20 relative group">
                                         <div className="flex items-center gap-3 text-left">
                                             <div className="size-10 bg-primary text-white rounded-xl flex items-center justify-center shrink-0 shadow-lg">
                                                 <FileCheck className="size-5" />
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-[11px] font-black truncate text-foreground">{data.example_file.name}</p>
-                                                <p className="text-[9px] font-bold text-muted-foreground">{(data.example_file.size / 1024).toFixed(1)} KB</p>
+                                                <p className="text-[11px] font-black truncate text-foreground">{f.name}</p>
+                                                <p className="text-[9px] font-bold text-muted-foreground">{(f.size / 1024 / 1024).toFixed(2)} MB</p>
                                             </div>
                                             <button 
                                                 type="button"
-                                                onClick={() => setData('example_file', null)}
+                                                onClick={() => removeNewFile(i)}
                                                 className="size-8 rounded-lg hover:bg-destructive/20 text-destructive flex items-center justify-center transition-colors"
                                             >
                                                 <X className="size-4" />
                                             </button>
                                         </div>
                                     </div>
-                                    <Button 
-                                        type="button"
-                                        className="w-full h-12 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
-                                        onClick={() => openPreview(URL.createObjectURL(data.example_file as File), (data.example_file as File).name)}
-                                    >
-                                        <Eye className="size-4" /> Pratinjau File
-                                    </Button>
-                                </div>
-                            )}
+                                ))}
 
-                            {isEditing && question.example_file_path && !data.example_file && (
-                                <div className="p-4 bg-muted/30 rounded-2xl border border-muted space-y-3">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Contoh Aktif di Server</p>
-                                    <Button 
-                                        type="button" 
-                                        variant="secondary" 
-                                        size="sm" 
-                                        className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                                        onClick={() => openPreview(`/storage/${question.example_file_path}`, 'Contoh Bukti Aktif')}
-                                    >
-                                        <Eye className="size-4 mr-2" /> Lihat Current
-                                    </Button>
-                                </div>
-                            )}
+                                {isEditing && data.existing_example_files && data.existing_example_files.map((ef: any, i: number) => (
+                                    <div key={`ext-${i}`} className="p-4 bg-muted/30 rounded-2xl border border-muted space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 w-32 truncate">{ef.name}</p>
+                                            <button 
+                                                type="button"
+                                                onClick={() => removeExistingFile(i)}
+                                                className="size-6 rounded hover:bg-destructive/10 text-destructive flex items-center justify-center transition-colors"
+                                            >
+                                                <X className="size-3" />
+                                            </button>
+                                        </div>
+                                        <Button 
+                                            type="button" 
+                                            variant="secondary" 
+                                            size="sm" 
+                                            className="w-full h-10 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                                            onClick={() => openPreview(`/storage/${ef.path}`, ef.name)}
+                                        >
+                                            <Eye className="size-4 mr-2" /> Lihat Current
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+
+
                         </div>
 
                         {/* Submit Section */}

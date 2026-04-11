@@ -199,15 +199,23 @@ class AdminCMSController extends Controller
             'text' => 'required|string',
             'instructions' => 'nullable|string',
             'legal_basis' => 'nullable|string',
-            'example_file' => 'nullable|file',
+            'example_files' => 'nullable|array',
+            'example_files.*' => 'nullable|file',
             'options' => 'required|array|min:5',
             'options.*.score' => 'required|numeric',
             'options.*.text' => 'required|string'
         ]);
 
-        $path = null;
-        if ($request->hasFile('example_file')) {
-            $path = $request->file('example_file')->store('evidence', 'public');
+        $paths = [];
+        if ($request->hasFile('example_files')) {
+            foreach($request->file('example_files') as $file) {
+                $paths[] = [
+                    'path' => $file->store('evidence', 'public'),
+                    'name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'type' => $file->getMimeType()
+                ];
+            }
         }
 
         $q = Question::create([
@@ -215,7 +223,7 @@ class AdminCMSController extends Controller
             'text' => $validated['text'],
             'instructions' => $validated['instructions'],
             'legal_basis' => $validated['legal_basis'],
-            'example_file_path' => $path
+            'example_file_paths' => $paths
         ]);
         
         foreach($validated['options'] as $opt) {
@@ -230,23 +238,33 @@ class AdminCMSController extends Controller
             'text' => 'required|string',
             'instructions' => 'nullable|string',
             'legal_basis' => 'nullable|string',
-            'example_file' => 'nullable|file',
+            'example_files' => 'nullable|array',
+            'example_files.*' => 'nullable|file',
+            'existing_example_files' => 'nullable|array',
             'options' => 'required|array|min:5',
             'options.*.id' => 'nullable|exists:options,id',
             'options.*.score' => 'required|numeric',
             'options.*.text' => 'required|string'
         ]);
 
-        $path = $question->example_file_path;
-        if ($request->hasFile('example_file')) {
-            $path = $request->file('example_file')->store('evidence', 'public');
+        $paths = $request->input('existing_example_files', []);
+        
+        if ($request->hasFile('example_files')) {
+            foreach($request->file('example_files') as $file) {
+                $paths[] = [
+                    'path' => $file->store('evidence', 'public'),
+                    'name' => $file->getClientOriginalName(),
+                    'size' => $file->getSize(),
+                    'type' => $file->getMimeType()
+                ];
+            }
         }
 
         $question->update([
             'text' => $validated['text'],
             'instructions' => $validated['instructions'],
             'legal_basis' => $validated['legal_basis'],
-            'example_file_path' => $path
+            'example_file_paths' => $paths
         ]);
 
         // Update options
