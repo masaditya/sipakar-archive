@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronRight, FileText, Percent, Filter } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
+import HelpFloatingButton, { TutorialItem } from '@/components/help-floating-button';
 
 export default function QuestionList({ aspects }: any) {
     const [statusFilter, setStatusFilter] = useState('all');
@@ -42,6 +43,24 @@ export default function QuestionList({ aspects }: any) {
     return (
         <>
             <Head title="Daftar Kuisioner" />
+            
+            <HelpFloatingButton 
+                tutorials={[
+                    {
+                        id: 1,
+                        title: 'Cara Menjawab Kuesioner',
+                        description: 'Panduan lengkap bagaimana cara mengisi dan melampirkan bukti pada kuesioner pengawasan.',
+                        videoUrl: '/videos/tutorial-menjawab.mp4' // Ganti dengan URL video yang diupload ke public/videos/
+                    },
+                    {
+                        id: 2,
+                        title: 'Memahami Bobot Penilaian',
+                        description: 'Penjelasan mengenai perhitungan bobot pada masing-masing aspek dan sub-aspek.',
+                        videoUrl: '/videos/tutorial-bobot.mp4'
+                    }
+                ]} 
+            />
+
             <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-4">
                     <div className="space-y-1">
