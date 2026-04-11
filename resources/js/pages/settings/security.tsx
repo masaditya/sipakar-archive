@@ -52,15 +52,15 @@ export default function Security({
 
     return (
         <>
-            <Head title="Security settings" />
+            <Head title="Keamanan Akun" />
 
-            <h1 className="sr-only">Security settings</h1>
+            <h1 className="sr-only">Keamanan Akun</h1>
 
             <div className="space-y-6">
                 <Heading
                     variant="small"
-                    title="Update password"
-                    description="Ensure your account is using a long, random password to stay secure"
+                    title="Perbarui Kata Sandi"
+                    description="Pastikan akun Anda menggunakan kata sandi yang panjang dan acak agar tetap aman"
                 />
 
                 <Form
@@ -89,31 +89,31 @@ export default function Security({
                         <>
                             <div className="grid gap-2">
                                 <Label htmlFor="current_password">
-                                    Current password
+                                    Kata Sandi Saat Ini
                                 </Label>
 
                                 <PasswordInput
                                     id="current_password"
                                     ref={currentPasswordInput}
                                     name="current_password"
-                                    className="mt-1 block w-full"
+                                    className="mt-1 block w-full rounded-xl"
                                     autoComplete="current-password"
-                                    placeholder="Current password"
+                                    placeholder="Kata Sandi Saat Ini"
                                 />
 
                                 <InputError message={errors.current_password} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">New password</Label>
+                                <Label htmlFor="password">Kata Sandi Baru</Label>
 
                                 <PasswordInput
                                     id="password"
                                     ref={passwordInput}
                                     name="password"
-                                    className="mt-1 block w-full"
+                                    className="mt-1 block w-full rounded-xl"
                                     autoComplete="new-password"
-                                    placeholder="New password"
+                                    placeholder="Kata Sandi Baru"
                                 />
 
                                 <InputError message={errors.password} />
@@ -121,15 +121,15 @@ export default function Security({
 
                             <div className="grid gap-2">
                                 <Label htmlFor="password_confirmation">
-                                    Confirm password
+                                    Konfirmasi Kata Sandi
                                 </Label>
 
                                 <PasswordInput
                                     id="password_confirmation"
                                     name="password_confirmation"
-                                    className="mt-1 block w-full"
+                                    className="mt-1 block w-full rounded-xl"
                                     autoComplete="new-password"
-                                    placeholder="Confirm password"
+                                    placeholder="Konfirmasi Kata Sandi"
                                 />
 
                                 <InputError
@@ -140,9 +140,10 @@ export default function Security({
                             <div className="flex items-center gap-4">
                                 <Button
                                     disabled={processing}
+                                    className="rounded-xl px-6 font-bold"
                                     data-test="update-password-button"
                                 >
-                                    Save password
+                                    Simpan Kata Sandi
                                 </Button>
 
                                 <Transition
@@ -153,7 +154,7 @@ export default function Security({
                                     leaveTo="opacity-0"
                                 >
                                     <p className="text-sm text-neutral-600">
-                                        Saved
+                                        Tersimpan
                                     </p>
                                 </Transition>
                             </div>
@@ -166,15 +167,13 @@ export default function Security({
                 <div className="space-y-6">
                     <Heading
                         variant="small"
-                        title="Two-factor authentication"
-                        description="Manage your two-factor authentication settings"
+                        title="Otentikasi Dua Faktor (2FA)"
+                        description="Kelola pengaturan otentikasi dua faktor Anda untuk keamanan tambahan"
                     />
                     {twoFactorEnabled ? (
                         <div className="flex flex-col items-start justify-start space-y-4">
                             <p className="text-sm text-muted-foreground">
-                                You will be prompted for a secure, random pin
-                                during login, which you can retrieve from the
-                                TOTP-supported application on your phone.
+                                Anda akan dimintai PIN rahasia saat masuk, yang dapat Anda ambil dari aplikasi pendukung TOTP di ponsel Anda.
                             </p>
 
                             <div className="relative inline">
@@ -184,8 +183,9 @@ export default function Security({
                                             variant="destructive"
                                             type="submit"
                                             disabled={processing}
+                                            className="rounded-xl font-bold"
                                         >
-                                            Disable 2FA
+                                            Nonaktifkan 2FA
                                         </Button>
                                     )}
                                 </Form>
@@ -200,19 +200,17 @@ export default function Security({
                     ) : (
                         <div className="flex flex-col items-start justify-start space-y-4">
                             <p className="text-sm text-muted-foreground">
-                                When you enable two-factor authentication, you
-                                will be prompted for a secure pin during login.
-                                This pin can be retrieved from a TOTP-supported
-                                application on your phone.
+                                Saat Anda mengaktifkan otentikasi dua faktor, Anda akan dimintai PIN rahasia saat masuk. PIN ini dapat diambil dari aplikasi pendukung TOTP di ponsel Anda.
                             </p>
 
                             <div>
                                 {hasSetupData ? (
                                     <Button
                                         onClick={() => setShowSetupModal(true)}
+                                        className="rounded-xl font-bold"
                                     >
-                                        <ShieldCheck />
-                                        Continue setup
+                                        <ShieldCheck className="mr-2" />
+                                        Lanjutkan Pengaturan
                                     </Button>
                                 ) : (
                                     <Form
@@ -225,8 +223,9 @@ export default function Security({
                                             <Button
                                                 type="submit"
                                                 disabled={processing}
+                                                className="rounded-xl font-bold"
                                             >
-                                                Enable 2FA
+                                                Aktifkan 2FA
                                             </Button>
                                         )}
                                     </Form>
@@ -255,7 +254,7 @@ export default function Security({
 Security.layout = {
     breadcrumbs: [
         {
-            title: 'Security settings',
+            title: 'Keamanan Akun',
             href: edit(),
         },
     ],

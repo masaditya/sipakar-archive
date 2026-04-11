@@ -23,14 +23,14 @@ export default function DeleteUser() {
         <div className="space-y-6">
             <Heading
                 variant="small"
-                title="Delete account"
-                description="Delete your account and all of its resources"
+                title="Hapus Akun"
+                description="Hapus akun Anda secara permanen beserta seluruh data di dalamnya"
             />
             <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
                 <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
-                    <p className="font-medium">Warning</p>
-                    <p className="text-sm">
-                        Please proceed with caution, this cannot be undone.
+                    <p className="font-bold uppercase tracking-widest text-[10px]">Peringatan</p>
+                    <p className="text-sm font-medium">
+                        Harap berhati-hati, tindakan ini tidak dapat dibatalkan.
                     </p>
                 </div>
 
@@ -38,20 +38,18 @@ export default function DeleteUser() {
                     <DialogTrigger asChild>
                         <Button
                             variant="destructive"
+                            className="rounded-xl font-bold"
                             data-test="delete-user-button"
                         >
-                            Delete account
+                            Hapus Akun
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogTitle>
-                            Are you sure you want to delete your account?
+                            Apakah Anda yakin ingin menghapus akun?
                         </DialogTitle>
                         <DialogDescription>
-                            Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
+                            Setelah akun Anda dihapus, semua sumber daya dan datanya akan dihapus secara permanen. Silakan masukkan kata sandi Anda untuk mengonfirmasi bahwa Anda ingin menghapus akun secara permanen.
                         </DialogDescription>
 
                         <Form
@@ -88,24 +86,26 @@ export default function DeleteUser() {
                                         <DialogClose asChild>
                                             <Button
                                                 variant="secondary"
+                                                className="rounded-xl font-bold"
                                                 onClick={() =>
                                                     resetAndClearErrors()
                                                 }
                                             >
-                                                Cancel
+                                                Batal
                                             </Button>
                                         </DialogClose>
 
                                         <Button
                                             variant="destructive"
                                             disabled={processing}
+                                            className="rounded-xl font-bold"
                                             asChild
                                         >
                                             <button
                                                 type="submit"
                                                 data-test="confirm-delete-user-button"
                                             >
-                                                Delete account
+                                                Hapus Akun
                                             </button>
                                         </Button>
                                     </DialogFooter>

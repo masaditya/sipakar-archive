@@ -96,15 +96,15 @@ function TwoFactorSetupStep({
                     </div>
 
                     <div className="flex w-full space-x-5">
-                        <Button className="w-full" onClick={onNextStep}>
+                        <Button className="w-full rounded-xl font-bold" onClick={onNextStep}>
                             {buttonText}
                         </Button>
                     </div>
 
                     <div className="relative flex w-full items-center justify-center">
                         <div className="absolute inset-0 top-1/2 h-px w-full bg-border" />
-                        <span className="relative bg-card px-2 py-1">
-                            or, enter the code manually
+                        <span className="relative bg-card px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                            Atau, masukkan kode secara manual
                         </span>
                     </div>
 
@@ -205,20 +205,20 @@ function TwoFactorVerificationStep({
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="flex-1"
+                                className="flex-1 rounded-xl font-bold"
                                 onClick={onBack}
                                 disabled={processing}
                             >
-                                Back
+                                Kembali
                             </Button>
                             <Button
                                 type="submit"
-                                className="flex-1"
+                                className="flex-1 rounded-xl font-bold"
                                 disabled={
                                     processing || code.length < OTP_MAX_LENGTH
                                 }
                             >
-                                Confirm
+                                Konfirmasi
                             </Button>
                         </div>
                     </div>
@@ -261,27 +261,27 @@ export default function TwoFactorSetupModal({
     }>(() => {
         if (twoFactorEnabled) {
             return {
-                title: 'Two-factor authentication enabled',
+                title: 'Otentikasi dua faktor diaktifkan',
                 description:
-                    'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
-                buttonText: 'Close',
+                    'Otentikasi dua faktor sekarang sudah diaktifkan. Pindai kode QR atau masukkan kunci pengaturan di aplikasi otentikator Anda.',
+                buttonText: 'Tutup',
             };
         }
 
         if (showVerificationStep) {
             return {
-                title: 'Verify authentication code',
+                title: 'Verifikasi kode otentikasi',
                 description:
-                    'Enter the 6-digit code from your authenticator app',
-                buttonText: 'Continue',
+                    'Masukkan 6 digit kode dari aplikasi otentikator Anda',
+                buttonText: 'Lanjutkan',
             };
         }
 
         return {
-            title: 'Enable two-factor authentication',
+            title: 'Aktifkan otentikasi dua faktor',
             description:
-                'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
-            buttonText: 'Continue',
+                'Untuk menyelesaikan pengaktifan otentikasi dua faktor, pindai kode QR atau masukkan kunci pengaturan di aplikasi otentikator Anda',
+            buttonText: 'Lanjutkan',
         };
     }, [twoFactorEnabled, showVerificationStep]);
 
