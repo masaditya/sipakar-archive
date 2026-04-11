@@ -27,6 +27,9 @@ import {
     SidebarSeparator
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { edit as editProfile } from '@/routes/profile';
+import { edit as editSecurity } from '@/routes/security';
+import { edit as editAppearance } from '@/routes/appearance';
 
 export function AppSidebar() {
     const { auth } = usePage<any>().props;
@@ -77,9 +80,13 @@ export function AppSidebar() {
             ]
         },
         {
-            title: 'Dokumentasi',
-            href: '#',
-            icon: FileText,
+            title: 'Pengaturan',
+            icon: Settings,
+            children: [
+                { title: 'Profil Akun', href: editProfile() },
+                { title: 'Keamanan', href: editSecurity() },
+                { title: 'Tampilan', href: editAppearance() },
+            ]
         }
     ];
 
