@@ -345,37 +345,47 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                                         />
                                     </div>
 
-                                    {/* Example Files */}
-                                    {question.example_file_paths && question.example_file_paths.length > 0 && (
-                                        <div className="space-y-3">
-                                            <div className="inline-flex items-center gap-2 text-primary border-b-2 border-primary/30 pb-2 mb-2 w-max">
-                                                <FileText className="w-5 h-5" />
-                                                <span className="text-sm font-black uppercase tracking-widest">Contoh Bukti Dukung</span>
+
+                                </CardContent>
+                            </Card>
+
+                            {/* Example Files Card */}
+                            {question.example_file_paths && question.example_file_paths.length > 0 && (
+                                <Card className="border-2 border-primary/30 shadow-[0_20px_40px_-15px_rgba(var(--primary),.3)] overflow-hidden">
+                                    <CardHeader className="pb-4 pt-6 bg-primary/5 border-b border-primary/10">
+                                        <div className="flex items-center justify-center sm:justify-start gap-3 text-primary">
+                                            <div className="p-2.5 bg-primary/20 rounded-xl">
+                                                <FileText className="w-6 h-6" />
                                             </div>
+                                            <CardTitle className="text-base font-black uppercase tracking-widest text-primary">Contoh Bukti Dukung</CardTitle>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="p-6 sm:p-8">
+                                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                                             {question.example_file_paths.map((ef: any, idx: number) => (
                                                 <div
                                                     key={idx}
                                                     onClick={() => openPreview(`/storage/${ef.path}`, ef.name)}
-                                                    className="mt-2 p-5 rounded-3xl border-2 border-dashed border-primary/30 bg-primary/10 flex items-center justify-between group hover:border-primary/60 hover:bg-primary/20 transition-all cursor-pointer shadow-sm"
+                                                    className="p-5 rounded-3xl border-2 border-dashed border-primary/30 bg-primary/10 flex items-center justify-between group hover:border-primary/60 hover:bg-primary/20 transition-all cursor-pointer shadow-sm"
                                                 >
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="p-3 rounded-2xl bg-white text-primary shadow-sm group-hover:scale-110 transition-transform">
+                                                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                        <div className="p-3 rounded-2xl bg-white text-primary shadow-sm group-hover:scale-110 transition-transform shrink-0">
                                                             <Download className="w-5 h-5" />
                                                         </div>
-                                                        <div className="flex flex-col gap-0.5 overflow-hidden">
-                                                            <span className="text-sm font-black text-primary tracking-widest uppercase truncate max-w-[200px] sm:max-w-xs">{ef.name}</span>
+                                                        <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                                                            <span className="text-sm font-black text-primary tracking-widest uppercase truncate">{ef.name}</span>
                                                             <span className="text-xs text-primary/70 font-black uppercase tracking-widest">{(ef.size / 1024 / 1024).toFixed(2)} MB</span>
                                                         </div>
                                                     </div>
-                                                    <div className="p-3 rounded-full bg-white/80 border shadow-sm group-hover:text-primary transition-all text-muted-foreground group-hover:-translate-x-1 shrink-0">
+                                                    <div className="p-3 rounded-full bg-white/80 border shadow-sm group-hover:text-primary transition-all text-muted-foreground group-hover:-translate-x-1 shrink-0 ml-4">
                                                         <Eye className="w-5 h-5" />
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+                                    </CardContent>
+                                </Card>
+                            )}
 
 
 

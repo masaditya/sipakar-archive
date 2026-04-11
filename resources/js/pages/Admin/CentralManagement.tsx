@@ -10,7 +10,8 @@ import {
     Layers, 
     CalendarDays,
     Info,
-    Percent
+    Percent,
+    Paperclip
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -202,6 +203,12 @@ export default function CentralManagement({ aspects }: any) {
                                                                                             <p className="text-[11px] font-bold text-muted-foreground leading-relaxed">{q.instructions}</p>
                                                                                         </div>
                                                                                     )} */}
+                                                                                    {q.example_file_paths && q.example_file_paths.length > 0 && (
+                                                                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary mt-1 border border-primary/20">
+                                                                                            <Paperclip className="size-3" />
+                                                                                            <span className="text-[10px] font-black uppercase tracking-widest">{q.example_file_paths.length} Item Contoh Bukti Dukung</span>
+                                                                                        </div>
+                                                                                    )}
                                                                                 </div>
                                                                                 <div className="flex flex-col gap-2 shrink-0 self-start">
                                                                                     <Link href={`/admin/questions/${q.id}/edit`}>
