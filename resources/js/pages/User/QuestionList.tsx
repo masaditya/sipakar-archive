@@ -1,13 +1,22 @@
 import { Head, Link } from '@inertiajs/react';
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, FileText, Percent, Filter } from 'lucide-react';
+import { ChevronRight, FileText, Percent, Filter, CheckCircle2, Circle, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import HelpFloatingButton, { TutorialItem } from '@/components/help-floating-button';
 
 export default function QuestionList({ aspects }: any) {
     const [statusFilter, setStatusFilter] = useState('all');
+    
+    const filterOptions = [
+        { id: 'all', label: 'Semua', icon: Filter, activeBg: 'bg-primary', activeText: 'text-primary-foreground' },
+        { id: 'answered', label: 'Terjawab', icon: CheckCircle2, activeBg: 'bg-primary', activeText: 'text-primary-foreground' },
+        { id: 'unanswered', label: 'Belum Dijawab', icon: Circle, activeBg: 'bg-secondary', activeText: 'text-secondary-foreground' },
+        { id: 'submitted', label: 'Diajukan', icon: Send, activeBg: 'bg-amber-500', activeText: 'text-white' },
+        { id: 'revision', label: 'Perlu Revisi', icon: AlertCircle, activeBg: 'bg-destructive', activeText: 'text-white' },
+        { id: 'completed', label: 'Selesai', icon: CheckCircle, activeBg: 'bg-green-600', activeText: 'text-white' },
+    ];
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -62,18 +71,32 @@ export default function QuestionList({ aspects }: any) {
             />
 
             <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-4">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b pb-6">
                     <div className="space-y-1">
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground/90">Pelaksanaan Audit</h1>
-                        <p className="text-sm text-muted-foreground w-full max-w-xl">Monitor pengawasan internal kearsipan Anda. Bobot nilai per aspek telah ditentukan sesuai regulasi.</p>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground/90 leading-none">Pelaksanaan Audit</h1>
+                        <p className="text-sm text-muted-foreground w-full max-w-xl leading-relaxed">Monitor pengawasan internal kearsipan Anda. Bobot nilai per aspek telah ditentukan sesuai regulasi.</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button variant={statusFilter === 'all' ? 'default' : 'outline'} onClick={() => setStatusFilter('all')} size="sm" className="h-8 text-sm rounded-full px-4 font-bold">Semua</Button>
-                        <Button variant={statusFilter === 'answered' ? 'default' : 'outline'} onClick={() => setStatusFilter('answered')} size="sm" className="h-8 text-sm rounded-full px-4 font-bold bg-primary/10 text-primary border-none hover:bg-primary/20 hover:text-primary">Terjawab</Button>
-                        <Button variant={statusFilter === 'unanswered' ? 'default' : 'outline'} onClick={() => setStatusFilter('unanswered')} size="sm" className="h-8 text-sm rounded-full px-4 font-bold">Belum Dijawab</Button>
-                        <Button variant={statusFilter === 'submitted' ? 'default' : 'outline'} onClick={() => setStatusFilter('submitted')} size="sm" className="h-8 text-sm rounded-full px-4 font-bold bg-amber-500/10 text-amber-600 border-none hover:bg-amber-500/20 hover:text-amber-700">Diajukan</Button>
-                        <Button variant={statusFilter === 'revision' ? 'default' : 'outline'} onClick={() => setStatusFilter('revision')} size="sm" className="h-8 text-sm rounded-full px-4 font-bold bg-destructive/10 text-destructive border-none hover:bg-destructive/20 hover:text-destructive">Perlu Revisi</Button>
-                        <Button variant={statusFilter === 'completed' ? 'default' : 'outline'} onClick={() => setStatusFilter('completed')} size="sm" className="h-8 text-sm rounded-full px-4 font-bold bg-green-500/10 text-green-600 border-none hover:bg-green-500/20 hover:text-green-700">Selesai</Button>
+                    <div className="w-full md:w-auto overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] -mx-4 px-4 md:mx-0 md:px-0">
+                        <div className="flex items-center gap-1.5 p-1.5 bg-muted/30 rounded-2xl border border-muted/50 w-fit min-w-max">
+                            {filterOptions.map((opt) => (
+                                <Button
+                                    key={opt.id}
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setStatusFilter(opt.id)}
+                                    className={`
+                                        h-8 text-xs font-bold rounded-xl transition-all duration-200 gap-1.5 px-3.5 whitespace-nowrap
+                                        ${statusFilter === opt.id 
+                                            ? `${opt.activeBg} ${opt.activeText} shadow-sm` 
+                                            : 'text-muted-foreground hover:bg-muted/50'
+                                        }
+                                    `}
+                                >
+                                    <opt.icon className={`size-3.5 ${statusFilter === opt.id ? 'opacity-100' : 'opacity-60'}`} />
+                                    {opt.label}
+                                </Button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -92,7 +115,7 @@ export default function QuestionList({ aspects }: any) {
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-l-4 border-primary pl-4 py-1 transition-all group-hover:border-l-8">
                                     <div className="space-y-1">
                                         <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground/90 uppercase">{aspect.name}</h2>
-                                        {aspect.description && <p className="text-sm text-muted-foreground max-w-2xl">{aspect.description}</p>}
+                                        {/* {aspect.description && <p className="text-sm text-muted-foreground max-w-2xl">{aspect.description}</p>} */}
                                     </div>
                                     <div className="shrink-0 flex items-center gap-1.5 bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20 w-fit">
                                         <Percent className="size-3.5 text-primary" />

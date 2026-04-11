@@ -3,11 +3,28 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, ClipboardList, TrendingUp, Building2, Activity, AlertCircle, ArrowRight } from 'lucide-react';
+import HelpFloatingButton from '@/components/help-floating-button';
 
 export default function UserDashboard({ stats, organization }: any) {
     return (
         <>
             <Head title="Dashboard Pelaksana" />
+            <HelpFloatingButton
+                tutorials={[
+                    {
+                        id: 1,
+                        title: 'Pengenalan Dashboard dan mulai pengisian ASKI',
+                        description: 'Panduan lengkap monitoring dashboard dan mulai pengisian ASKI.',
+                        videoUrl: '/videos/dashboard.mp4'
+                    },
+                    {
+                        id: 2,
+                        title: 'Cara mengganti password',
+                        description: 'Panduan lengkap cara mengganti password.',
+                        videoUrl: '/videos/update-password.mp4'
+                    }
+                ]}
+            />
             <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
                     <div className="flex flex-col gap-2">
@@ -89,7 +106,7 @@ export default function UserDashboard({ stats, organization }: any) {
                         <Card className="bg-primary/5 border-primary/20 hover:border-primary hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer h-full group">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-bold uppercase text-primary tracking-widest flex items-center gap-2">
-                                    <div className="p-1 rounded-full bg-primary/20 group-hover:bg-primary group-hover:text-white transition-colors"><CheckCircle2 className="w-3 h-3 group-hover:stroke-white"/></div>
+                                    <div className="p-1 rounded-full bg-primary/20 group-hover:bg-primary group-hover:text-white transition-colors"><CheckCircle2 className="w-3 h-3 group-hover:stroke-white" /></div>
                                     Selesai / Finalisasi
                                 </CardTitle>
                             </CardHeader>
@@ -103,7 +120,7 @@ export default function UserDashboard({ stats, organization }: any) {
                         <Card className="bg-amber-500/5 border-amber-500/20 hover:border-amber-500 hover:shadow-md hover:-translate-y-1 hover:shadow-amber-500/10 transition-all duration-300 cursor-pointer h-full group">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-bold uppercase text-amber-600 tracking-widest flex items-center gap-2">
-                                    <Activity className="w-3 h-3 group-hover:scale-110 transition-transform"/>
+                                    <Activity className="w-3 h-3 group-hover:scale-110 transition-transform" />
                                     Diajukan (Review)
                                 </CardTitle>
                             </CardHeader>
@@ -117,7 +134,7 @@ export default function UserDashboard({ stats, organization }: any) {
                         <Card className="bg-destructive/5 border-destructive/20 hover:border-destructive hover:shadow-md hover:-translate-y-1 hover:shadow-destructive/10 transition-all duration-300 cursor-pointer h-full group">
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-bold uppercase text-destructive tracking-widest flex items-center gap-2">
-                                    <AlertCircle className="w-3 h-3 group-hover:scale-110 transition-transform"/>
+                                    <AlertCircle className="w-3 h-3 group-hover:scale-110 transition-transform" />
                                     Butuh Perbaikan
                                 </CardTitle>
                             </CardHeader>
@@ -133,7 +150,7 @@ export default function UserDashboard({ stats, organization }: any) {
                     <CardHeader>
                         <CardTitle className="text-lg">Instruksi Pengisian</CardTitle>
                         <CardDescription>
-                            Silakan buka menu <strong>"Kuisioner"</strong> di sidebar untuk mulai mengisi jawaban dan mengunggah bukti dukung. 
+                            Silakan buka menu <strong>"Kuisioner"</strong> di sidebar untuk mulai mengisi jawaban dan mengunggah bukti dukung.
                             Pastikan setiap jawaban didukung oleh file bukti yang relevan sesuai dengan petunjuk yang diberikan pada tiap soal.
                             Status <strong>"Selesai"</strong> berarti jawaban Anda sudah difinalisasi oleh tim pengawas.
                         </CardDescription>

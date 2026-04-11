@@ -2,6 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { dashboard, login } from '@/routes';
 import { CheckCircle2, ShieldCheck, FileSearch, BarChart3, ChevronRight, Zap, Download, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import HelpFloatingButton from '@/components/help-floating-button';
 
 export default function Welcome() {
     const { auth } = usePage<any>().props;
@@ -9,7 +10,16 @@ export default function Welcome() {
     return (
         <>
             <Head title="SIPAKAR - Sistem Pengawasan Kearsipan" />
-            
+            <HelpFloatingButton
+                tutorials={[
+                    {
+                        id: 1,
+                        title: 'Cara Login dan Masuk ke Sistem',
+                        description: 'Panduan lengkap bagaimana cara login dan masuk ke sistem SIPAKAR.',
+                        videoUrl: '/videos/landing-login.mp4'
+                    }
+                ]}
+            />
             <div className="min-h-screen bg-background font-sans text-foreground selection:bg-primary/20 selection:text-primary">
                 {/* Navbar */}
                 <nav className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl">
@@ -57,7 +67,7 @@ export default function Welcome() {
                                 Wujudkan Tata Kelola Kearsipan yang <span className="text-primary italic">Akuntabel.</span>
                             </h1>
                             <p className="mt-8 text-lg font-medium leading-relaxed text-muted-foreground max-w-2xl mx-auto">
-                                SIPAKAR mempermudah instansi dalam melakukan penilaian mandiri, management bukti dukung, 
+                                SIPAKAR mempermudah instansi dalam melakukan penilaian mandiri, management bukti dukung,
                                 hingga audit kearsipan secara digital dan terintegrasi.
                             </p>
                             <div className="mt-12 flex flex-col items-center justify-center gap-6 sm:flex-row">
@@ -77,44 +87,44 @@ export default function Welcome() {
                             <div className="relative rounded-[2.5rem] border bg-card/50 p-4 backdrop-blur-2xl shadow-2xl overflow-hidden group">
                                 <div className="absolute inset-0 bg-linear-to-br from-primary/5 to-transparent"></div>
                                 <div className="relative rounded-3xl border border-white/10 bg-background overflow-hidden flex flex-col h-[400px] w-full max-w-5xl shadow-inner">
-                                     {/* Mockup Dashboard Sidebar */}
-                                     <div className="flex flex-1">
-                                         <div className="w-16 sm:w-60 border-r bg-muted/20 p-4 hidden sm:flex flex-col gap-4">
-                                             <div className="h-8 w-32 bg-primary/20 rounded-lg animate-pulse"></div>
-                                             <div className="h-4 w-40 bg-muted rounded-full"></div>
-                                             <div className="h-4 w-32 bg-muted rounded-full"></div>
-                                             <div className="mt-auto h-12 w-full bg-muted rounded-xl"></div>
-                                         </div>
-                                         <div className="flex-1 p-8 space-y-8">
-                                             <div className="flex justify-between items-center">
-                                                 <div className="space-y-2">
-                                                     <div className="h-3 w-20 bg-primary/30 rounded-full"></div>
-                                                     <div className="h-8 w-64 bg-foreground/10 rounded-xl"></div>
-                                                 </div>
-                                                 <div className="h-10 w-10 rounded-full bg-muted"></div>
-                                             </div>
-                                             <div className="grid grid-cols-3 gap-6">
-                                                 <div className="h-32 rounded-3xl border bg-muted/10 p-4 flex flex-col justify-between">
-                                                     <div className="h-2 w-12 bg-muted rounded"></div>
-                                                     <div className="h-8 w-16 bg-primary/20 rounded"></div>
-                                                 </div>
-                                                 <div className="h-32 rounded-3xl border bg-muted/10 p-4 flex flex-col justify-between">
-                                                     <div className="h-2 w-12 bg-muted rounded"></div>
-                                                     <div className="h-8 w-16 bg-primary/20 rounded"></div>
-                                                 </div>
-                                                 <div className="h-32 rounded-3xl border bg-primary/5 border-primary/20 p-4 flex flex-col justify-between">
-                                                     <div className="h-2 w-12 bg-primary/30 rounded"></div>
-                                                     <div className="h-8 w-16 bg-primary/40 rounded"></div>
-                                                 </div>
-                                             </div>
-                                             <div className="h-40 rounded-3xl border border-dashed border-muted flex items-center justify-center">
-                                                 <div className="flex flex-col items-center gap-2 opacity-20">
-                                                     <FileSearch className="w-10 h-10" />
-                                                     <span className="text-[10px] font-black uppercase tracking-widest">Preview Form Kuisioner</span>
-                                                 </div>
-                                             </div>
-                                         </div>
-                                     </div>
+                                    {/* Mockup Dashboard Sidebar */}
+                                    <div className="flex flex-1">
+                                        <div className="w-16 sm:w-60 border-r bg-muted/20 p-4 hidden sm:flex flex-col gap-4">
+                                            <div className="h-8 w-32 bg-primary/20 rounded-lg animate-pulse"></div>
+                                            <div className="h-4 w-40 bg-muted rounded-full"></div>
+                                            <div className="h-4 w-32 bg-muted rounded-full"></div>
+                                            <div className="mt-auto h-12 w-full bg-muted rounded-xl"></div>
+                                        </div>
+                                        <div className="flex-1 p-8 space-y-8">
+                                            <div className="flex justify-between items-center">
+                                                <div className="space-y-2">
+                                                    <div className="h-3 w-20 bg-primary/30 rounded-full"></div>
+                                                    <div className="h-8 w-64 bg-foreground/10 rounded-xl"></div>
+                                                </div>
+                                                <div className="h-10 w-10 rounded-full bg-muted"></div>
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-6">
+                                                <div className="h-32 rounded-3xl border bg-muted/10 p-4 flex flex-col justify-between">
+                                                    <div className="h-2 w-12 bg-muted rounded"></div>
+                                                    <div className="h-8 w-16 bg-primary/20 rounded"></div>
+                                                </div>
+                                                <div className="h-32 rounded-3xl border bg-muted/10 p-4 flex flex-col justify-between">
+                                                    <div className="h-2 w-12 bg-muted rounded"></div>
+                                                    <div className="h-8 w-16 bg-primary/20 rounded"></div>
+                                                </div>
+                                                <div className="h-32 rounded-3xl border bg-primary/5 border-primary/20 p-4 flex flex-col justify-between">
+                                                    <div className="h-2 w-12 bg-primary/30 rounded"></div>
+                                                    <div className="h-8 w-16 bg-primary/40 rounded"></div>
+                                                </div>
+                                            </div>
+                                            <div className="h-40 rounded-3xl border border-dashed border-muted flex items-center justify-center">
+                                                <div className="flex flex-col items-center gap-2 opacity-20">
+                                                    <FileSearch className="w-10 h-10" />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest">Preview Form Kuisioner</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -186,15 +196,15 @@ export default function Welcome() {
                                 <div className="relative">
                                     <div className="absolute -inset-4 bg-linear-to-tr from-primary/20 to-teal-400/20 blur-3xl opacity-30 animate-pulse"></div>
                                     <div className="relative rounded-[3rem] border border-white/10 bg-linear-to-br from-card to-muted/20 p-12 shadow-2xl backdrop-blur-xl flex items-center justify-center h-[450px]">
-                                         <div className="text-center space-y-6">
-                                             <div className="inline-flex h-24 w-24 items-center justify-center rounded-4xl bg-primary shadow-2xl shadow-primary/40 text-primary-foreground transform rotate-12">
-                                                 <CheckCircle2 className="h-12 w-12" />
-                                             </div>
-                                             <div className="space-y-2">
-                                                 <h3 className="text-3xl font-black uppercase italic tracking-tighter">Verified Audit</h3>
-                                                 <p className="text-xs uppercase font-black tracking-[0.4em] text-muted-foreground">Standard Archival Quality</p>
-                                             </div>
-                                         </div>
+                                        <div className="text-center space-y-6">
+                                            <div className="inline-flex h-24 w-24 items-center justify-center rounded-4xl bg-primary shadow-2xl shadow-primary/40 text-primary-foreground transform rotate-12">
+                                                <CheckCircle2 className="h-12 w-12" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-3xl font-black uppercase italic tracking-tighter">Verified Audit</h3>
+                                                <p className="text-xs uppercase font-black tracking-[0.4em] text-muted-foreground">Standard Archival Quality</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
