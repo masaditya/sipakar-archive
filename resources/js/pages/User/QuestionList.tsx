@@ -8,7 +8,7 @@ import HelpFloatingButton, { TutorialItem } from '@/components/help-floating-but
 
 export default function QuestionList({ aspects }: any) {
     const [statusFilter, setStatusFilter] = useState('all');
-    
+
     const filterOptions = [
         { id: 'all', label: 'Semua', icon: Filter, activeBg: 'bg-primary', activeText: 'text-primary-foreground' },
         { id: 'answered', label: 'Terjawab', icon: CheckCircle2, activeBg: 'bg-primary', activeText: 'text-primary-foreground' },
@@ -30,18 +30,18 @@ export default function QuestionList({ aspects }: any) {
         let count = 0;
         const result = aspects.map((aspect: any) => {
             const aspectVisibleSubs = aspect.sub_aspects.map((sub: any) => {
-                 const visibleQs = sub.questions.filter((q: any) => {
-                     const answer = q.answers && q.answers[0];
-                     const isAnswered = !!answer;
-                     const status = answer?.status || 'none';
+                const visibleQs = sub.questions.filter((q: any) => {
+                    const answer = q.answers && q.answers[0];
+                    const isAnswered = !!answer;
+                    const status = answer?.status || 'none';
 
-                     if (statusFilter === 'all') return true;
-                     if (statusFilter === 'answered') return isAnswered;
-                     if (statusFilter === 'unanswered') return !isAnswered;
-                     return status === statusFilter;
-                 });
-                 count += visibleQs.length;
-                 return { ...sub, visibleQs };
+                    if (statusFilter === 'all') return true;
+                    if (statusFilter === 'answered') return isAnswered;
+                    if (statusFilter === 'unanswered') return !isAnswered;
+                    return status === statusFilter;
+                });
+                count += visibleQs.length;
+                return { ...sub, visibleQs };
             }).filter((sub: any) => sub.visibleQs.length > 0);
             return { ...aspect, aspectVisibleSubs };
         }).filter((aspect: any) => aspect.aspectVisibleSubs.length > 0);
@@ -52,22 +52,22 @@ export default function QuestionList({ aspects }: any) {
     return (
         <>
             <Head title="Daftar Kuisioner" />
-            
-            <HelpFloatingButton 
+
+            <HelpFloatingButton
                 tutorials={[
                     {
                         id: 1,
-                        title: 'Cara Menjawab Kuesioner',
+                        title: 'Cara Mengisi Item ASKI / Kuisioner',
                         description: 'Panduan lengkap bagaimana cara mengisi dan melampirkan bukti pada kuesioner pengawasan.',
-                        videoUrl: '/videos/tutorial-menjawab.mp4' // Ganti dengan URL video yang diupload ke public/videos/
+                        videoUrl: '/videos/cara-mengisi.mp4' // Ganti dengan URL video yang diupload ke public/videos/
                     },
                     {
                         id: 2,
-                        title: 'Memahami Bobot Penilaian',
-                        description: 'Penjelasan mengenai perhitungan bobot pada masing-masing aspek dan sub-aspek.',
-                        videoUrl: '/videos/tutorial-bobot.mp4'
+                        title: 'Cara Memperbaiki Item ASKI / Kuisioner yang Butuh Revisi',
+                        description: 'Panduan lengkap bagaimana cara memperbaiki item ASKI / Kuisioner yang butuh revisi.',
+                        videoUrl: '/videos/cara-revisi.mp4'
                     }
-                ]} 
+                ]}
             />
 
             <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
@@ -86,8 +86,8 @@ export default function QuestionList({ aspects }: any) {
                                     onClick={() => setStatusFilter(opt.id)}
                                     className={`
                                         h-8 text-xs font-bold rounded-xl transition-all duration-200 gap-1.5 px-3.5 whitespace-nowrap
-                                        ${statusFilter === opt.id 
-                                            ? `${opt.activeBg} ${opt.activeText} shadow-sm` 
+                                        ${statusFilter === opt.id
+                                            ? `${opt.activeBg} ${opt.activeText} shadow-sm`
                                             : 'text-muted-foreground hover:bg-muted/50'
                                         }
                                     `}
@@ -142,7 +142,7 @@ export default function QuestionList({ aspects }: any) {
                                                     const answer = q.answers && q.answers[0];
                                                     const isAnswered = !!answer;
                                                     const status = answer?.status || 'none';
-                                                    
+
                                                     const statusMap: any = {
                                                         'submitted': { label: 'Diajukan', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', borderTop: 'border-t-amber-500/80' },
                                                         'revision': { label: 'Perlu Revisi', color: 'bg-destructive/10 text-destructive border-destructive/20', borderTop: 'border-t-destructive/80' },
@@ -151,8 +151,8 @@ export default function QuestionList({ aspects }: any) {
                                                     };
 
                                                     return (
-                                                        <Link 
-                                                            key={q.id} 
+                                                        <Link
+                                                            key={q.id}
                                                             href={`/questionnaire/${q.id}`}
                                                             className="group/card transition-all duration-200 outline-none block w-full"
                                                         >
