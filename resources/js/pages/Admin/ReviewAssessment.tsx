@@ -104,6 +104,44 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
         ttd2_nip: '',
     });
 
+    // --- Persistence Logic ---
+    useEffect(() => {
+        const orgId = pelaksana.organization_id;
+        if (!orgId) return;
+
+        const savedRhas = localStorage.getItem(`rhas_config_${orgId}`);
+        if (savedRhas) {
+            try { setRhasForm(JSON.parse(savedRhas)); } catch(e) {}
+        }
+        const savedBab2 = localStorage.getItem(`bab2_config_${orgId}`);
+        if (savedBab2) {
+            try { setBab2Form(JSON.parse(savedBab2)); } catch(e) {}
+        }
+        const savedReport = localStorage.getItem(`report_config_${orgId}`);
+        if (savedReport) {
+            try { setReportForm(JSON.parse(savedReport)); } catch(e) {}
+        }
+    }, [pelaksana.organization_id]);
+
+    useEffect(() => {
+        const orgId = pelaksana.organization_id;
+        if (!orgId) return;
+        localStorage.setItem(`rhas_config_${orgId}`, JSON.stringify(rhasForm));
+    }, [rhasForm, pelaksana.organization_id]);
+
+    useEffect(() => {
+        const orgId = pelaksana.organization_id;
+        if (!orgId) return;
+        localStorage.setItem(`bab2_config_${orgId}`, JSON.stringify(bab2Form));
+    }, [bab2Form, pelaksana.organization_id]);
+
+    useEffect(() => {
+        const orgId = pelaksana.organization_id;
+        if (!orgId) return;
+        localStorage.setItem(`report_config_${orgId}`, JSON.stringify(reportForm));
+    }, [reportForm, pelaksana.organization_id]);
+    // -------------------------
+
     const allQuestions = useMemo(() => {
         return aspects.flatMap((aspect: any) =>
             aspect.sub_aspects.flatMap((sub: any) =>

@@ -104,47 +104,78 @@ class DashboardController extends Controller
 
     private function calculateWeightedScore($user, $periodId)
     {
-        $aspects = Aspect::where('period_id', $periodId)->with('subAspects.questions.answers', function($q) use ($user, $periodId) {
+        $aspects = Aspect::where('period_id', $periodId)->with(['subAspects.questions.answers' => function($q) use ($user, $periodId) {
             $q->where('user_id', $user->id)->where('period_id', $periodId)->with('option');
-        })->get();
+        }])->get();
 
-        $finalScore = 0;
+        $total_skor_up = 0;
+        $total_skor_uk = 0;
 
         foreach ($aspects as $aspect) {
-            $aspectWeightedScore = 0;
-            $aspectWeight = $aspect->score_weight ?? 0;
-
-            foreach ($aspect->subAspects as $subAspect) {
-                $subAspectWeight = $subAspect->score_weight ?? 0;
-                $questions = $subAspect->questions;
-                $questionCount = $questions->count();
-
-                if ($questionCount > 0) {
-                    $subAspectRawScore = 0;
-                    foreach ($questions as $question) {
-                        // Find the answer for this user in this period
-                        $answer = $question->answers->first();
-                        if ($answer && $answer->status === 'completed' && $answer->option) {
-                            $subAspectRawScore += $answer->option->score;
+            $bobotAspek = $aspect->score_weight;
+            
+            // UP Compute
+            $upSubAspects = $aspect->subAspects->where('type', 'UP');
+            if ($upSubAspects->isNotEmpty()) {
+                $subSkorSum = 0;
+                foreach ($upSubAspects as $sub) {
+                    $questions = $sub->questions;
+                    $nilaiStandar = $questions->count() * 100;
+                    $totalNilai = 0;
+                    foreach ($questions as $q) {
+                        $ans = $q->answers->first();
+                        if ($ans && $ans->status === 'completed' && $ans->option) {
+                            $totalNilai += $ans->option->score;
                         }
                     }
-                    $subAspectAverage = $subAspectRawScore / $questionCount;
-                    $aspectWeightedScore += ($subAspectAverage * $subAspectWeight / 100);
+                    $subBobot = $sub->score_weight ?? 0;
+                    $subSkor = $nilaiStandar > 0 ? ($totalNilai / $nilaiStandar) * $subBobot : 0;
+                    $subSkorSum += $subSkor;
                 }
+                $total_skor_up += $subSkorSum * ($bobotAspek / 100);
             }
-            $finalScore += ($aspectWeightedScore * $aspectWeight / 100);
+
+            // UK Compute
+            $ukSubAspects = $aspect->subAspects->where('type', 'UK');
+            if ($ukSubAspects->isNotEmpty()) {
+                $subSkorSum = 0;
+                foreach ($ukSubAspects as $sub) {
+                    $questions = $sub->questions;
+                    $nilaiStandar = $questions->count() * 100;
+                    $totalNilai = 0;
+                    foreach ($questions as $q) {
+                        $ans = $q->answers->first();
+                        if ($ans && $ans->status === 'completed' && $ans->option) {
+                            $totalNilai += $ans->option->score;
+                        }
+                    }
+                    $subBobot = $sub->score_weight ?? 0;
+                    $subSkor = $nilaiStandar > 0 ? ($totalNilai / $nilaiStandar) * $subBobot : 0;
+                    $subSkorSum += $subSkor;
+                }
+                $total_skor_uk += $subSkorSum * ($bobotAspek / 100);
+            }
         }
 
-        return $finalScore;
+        return ($total_skor_up + $total_skor_uk) / 2;
     }
 
     public function questionnaireList(Request $request)
     {
         $user = $request->user();
         $selectedPeriodId = session('selected_period_id');
-        $aspects = Aspect::where('period_id', $selectedPeriodId)->with(['subAspects.questions.answers' => function($q) use ($user, $selectedPeriodId) {
-            $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId);
-        }])->get();
+        $aspects = Aspect::where('period_id', $selectedPeriodId)
+            ->with([
+                'subAspects' => function($q) {
+                    $q->orderByRaw("CASE WHEN type = 'UP' THEN 0 ELSE 1 END")->orderBy('id', 'asc');
+                },
+                'subAspects.questions.answers' => function($q) use ($user, $selectedPeriodId) {
+                    $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId);
+                }
+            ])
+            ->orderByRaw("CASE WHEN type = 'Unit Pengolah' THEN 0 ELSE 1 END")
+            ->orderBy('id', 'asc')
+            ->get();
 
         return Inertia::render('User/QuestionList', [
             'aspects' => $aspects
