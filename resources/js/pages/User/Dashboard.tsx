@@ -91,12 +91,12 @@ export default function UserDashboard({ stats, organization }: any) {
                             <Activity className="w-24 h-24 text-white" />
                         </div>
                         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                            <CardTitle className="text-xs font-black uppercase tracking-widest opacity-80">Estimasi Skor</CardTitle>
+                            <CardTitle className="text-xs font-black uppercase tracking-widest opacity-80">Estimasi Nilai Akhir</CardTitle>
                             <div className="px-1.5 py-0.5 bg-white/20 text-[8px] rounded-md font-black uppercase tracking-tighter shadow-sm backdrop-blur">MAX 100</div>
                         </CardHeader>
                         <CardContent>
                             <div className="text-4xl font-black">{stats.totalScore}</div>
-                            <p className="text-xs font-bold opacity-70 uppercase mt-1">Berdasarkan jawaban aktif</p>
+                            <p className="text-xs font-bold opacity-70 uppercase mt-1">Berdasarkan seluruh jawaban terisi</p>
                         </CardContent>
                     </Card>
                 </div>

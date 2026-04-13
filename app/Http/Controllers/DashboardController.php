@@ -124,7 +124,7 @@ class DashboardController extends Controller
                     $totalNilai = 0;
                     foreach ($questions as $q) {
                         $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
+                        if ($ans && $ans->option) {
                             $totalNilai += $ans->option->score;
                         }
                     }
@@ -145,7 +145,7 @@ class DashboardController extends Controller
                     $totalNilai = 0;
                     foreach ($questions as $q) {
                         $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
+                        if ($ans && $ans->option) {
                             $totalNilai += $ans->option->score;
                         }
                     }
