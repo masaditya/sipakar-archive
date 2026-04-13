@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, FileText, Percent, Filter, CheckCircle2, Circle, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { ChevronRight, FileText, Percent, Filter, CheckCircle2, Circle, Send, AlertCircle, CheckCircle, Calculator } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import HelpFloatingButton, { TutorialItem } from '@/components/help-floating-button';
@@ -159,9 +159,16 @@ export default function QuestionList({ aspects }: any) {
                                                             <Card className={`h-full border shadow-sm cursor-pointer gap-2 overflow-hidden group-focus-visible/card:ring-1 ring-primary flex flex-col border-t-4 ${statusMap[status].borderTop} ${isAnswered ? 'bg-linear-to-br from-background to-primary/2' : 'bg-background'}`}>
                                                                 <CardHeader className="p-3 pb-1.5 space-y-0 text-sm flex-none">
                                                                     <div className="flex justify-between items-center gap-2">
-                                                                        <div className="flex items-center gap-1 px-1.5 py-0.5 rounded border bg-muted/30 text-xs font-bold uppercase text-muted-foreground tracking-wider">
-                                                                            <FileText className="w-2.5 h-2.5" />
-                                                                            ID: {q.id}
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded border bg-muted/30 text-xs font-bold uppercase text-muted-foreground tracking-wider">
+                                                                                <FileText className="w-2.5 h-2.5" />
+                                                                                ID: {q.id}
+                                                                            </div>
+                                                                            {q.helper && (
+                                                                                <div className="p-0.5 bg-primary/10 text-primary rounded border border-primary/20 animate-pulse-subtle" title="Tersedia Kalkulator Bantu">
+                                                                                    <Calculator className="w-3 h-3" />
+                                                                                </div>
+                                                                            )}
                                                                         </div>
                                                                         <div className={`px-1.5 py-0.5 border rounded opacity-90 text-xs font-bold uppercase tracking-widest ${statusMap[status].color}`}>
                                                                             {statusMap[status].label}

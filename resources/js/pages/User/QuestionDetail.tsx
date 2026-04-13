@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, FileUp, Info, CheckCircle2, Download, Extern
 import { useState } from 'react';
 import { FilePreviewModal } from '@/components/file-preview-modal';
 import { Progress } from '@/components/ui/progress';
+import { renderHelperCalculator } from '@/components/AuditCalculators';
 
 export default function QuestionDetail({ question, answer, prevId, nextId, currentIndex, totalCount }: any) {
     const { data, setData, post, processing, errors, progress } = useForm({
@@ -288,6 +289,7 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
 
                         {/* RIGHT COLUMN: Info & Status */}
                         <div className="space-y-6 lg:sticky lg:top-6 col-span-6">
+                            {renderHelperCalculator(question.helper)}
 
                             {answer?.notes && (
                                 <Card className={`border-2 shadow-md relative overflow-hidden ${answer.status === 'revision' ? 'border-destructive/40 bg-destructive/5' : 'border-primary/30 bg-primary/5'}`}>
