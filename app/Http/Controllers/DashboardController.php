@@ -228,7 +228,8 @@ class DashboardController extends Controller
     {
         $validated = $request->validate([
             'status' => 'sometimes|in:submitted,revision,completed',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'recommendation' => 'nullable|string'
         ]);
 
         $answer->update($validated);

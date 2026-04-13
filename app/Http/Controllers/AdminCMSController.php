@@ -438,6 +438,90 @@ class AdminCMSController extends Controller
         return $pdf->stream('Laporan-Pengawasan-'.$user->name.'.pdf');
     }
 
+    public function generateRHAS(Request $request, User $user) {
+        $user->load('organization');
+        $selectedPeriodId = session('selected_period_id');
+        $type = $request->input('type', 'UP');
+
+        $aspects = Aspect::where('period_id', $selectedPeriodId)
+            ->whereHas('subAspects', function($q) use ($type) {
+                $q->where('type', $type);
+            })
+            ->with(['subAspects' => function($q) use ($type) {
+                $q->where('type', $type);
+            }, 'subAspects.questions.answers' => function($q) use ($user, $selectedPeriodId) {
+                $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId)->with('option');
+            }])->get();
+
+        $inputs = [
+            'type' => $type,
+            'up_name' => $request->input('up_name', '...'),
+            'opd_name' => $request->input('opd_name', $user->organization->name ?? ''),
+            'ttd1_jabatan' => 'KEPALA DINAS PERPUSTAKAAN DAN KEARSIPAN',
+            'ttd1_nama' => 'ERICK FIRDAUS, ST.',
+            'ttd1_pangkat' => 'Pembina Tingkat I',
+            'ttd1_nip' => '19690726 200312 1 003',
+            'ttd2_jabatan' => $request->input('ttd2_jabatan', 'KEPALA ' . strtoupper($user->organization->name ?? 'OPD')),
+            'ttd2_nama' => $request->input('ttd2_nama', ''),
+            'ttd2_pangkat' => $request->input('ttd2_pangkat', ''),
+            'ttd2_nip' => $request->input('ttd2_nip', ''),
+            'tanggal' => \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y'),
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.rhas', compact('user', 'aspects', 'inputs'))
+            ->setPaper([0, 0, 609.448, 935.433], 'landscape'); // Landscape F4
+            
+        $filename = 'RHAS-' . $type . '-' . $user->name . '.pdf';
+
+        if ($request->has('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
+
+    public function generateBab2(Request $request, User $user) {
+        $user->load('organization');
+        $selectedPeriodId = session('selected_period_id');
+        $type = $request->input('type', 'UP');
+
+        $aspects = Aspect::where('period_id', $selectedPeriodId)
+            ->whereHas('subAspects', function($q) use ($type) {
+                $q->where('type', $type);
+            })
+            ->with(['subAspects' => function($q) use ($type) {
+                $q->where('type', $type);
+            }, 'subAspects.questions.answers' => function($q) use ($user, $selectedPeriodId) {
+                $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId)->with('option');
+            }])->get();
+
+        $inputs = [
+            'type' => $type,
+            'up_name' => $request->input('up_name', '...'),
+            'opd_name' => $request->input('opd_name', $user->organization->name ?? ''),
+            'ttd1_jabatan' => 'KEPALA DINAS PERPUSTAKAAN DAN KEARSIPAN',
+            'ttd1_nama' => 'ERICK FIRDAUS, ST.',
+            'ttd1_pangkat' => 'Pembina Tingkat I',
+            'ttd1_nip' => '19690726 200312 1 003',
+            'ttd2_jabatan' => $request->input('ttd2_jabatan', 'KEPALA ' . strtoupper($user->organization->name ?? 'OPD')),
+            'ttd2_nama' => $request->input('ttd2_nama', ''),
+            'ttd2_pangkat' => $request->input('ttd2_pangkat', ''),
+            'ttd2_nip' => $request->input('ttd2_nip', ''),
+            'tanggal' => \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y'),
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.bab2', compact('user', 'aspects', 'inputs'))
+            ->setPaper([0, 0, 609.448, 935.433], 'landscape'); // Landscape F4
+            
+        $filename = 'BAB2-' . $type . '-' . $user->name . '.pdf';
+
+        if ($request->has('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
+
     public function switchPeriod(Request $request) {
         $validated = $request->validate([
             'period_id' => 'required|exists:periods,id'

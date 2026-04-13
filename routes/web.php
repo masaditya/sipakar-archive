@@ -52,6 +52,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/admin/answers/bulk-status', [DashboardController::class, 'bulkUpdateAnswerStatus'])->name('admin.answers.bulk_status');
         Route::get('/admin/review/{user}', [\App\Http\Controllers\AdminCMSController::class, 'reviewOrganization'])->name('admin.review');
         Route::get('/admin/review/{user}/report.pdf', [\App\Http\Controllers\AdminCMSController::class, 'generateReport'])->name('admin.review.report');
+        Route::get('/admin/review/{user}/rhas.pdf', [\App\Http\Controllers\AdminCMSController::class, 'generateRHAS'])->name('admin.review.rhas');
+        Route::get('/admin/review/{user}/bab2.pdf', [\App\Http\Controllers\AdminCMSController::class, 'generateBab2'])->name('admin.review.bab2');
         Route::post('/admin/switch-period', [\App\Http\Controllers\AdminCMSController::class, 'switchPeriod'])->name('admin.switch_period');
     });
 });
