@@ -529,4 +529,56 @@ class AdminCMSController extends Controller
         session(['selected_period_id' => $validated['period_id']]);
         return back()->with('success', 'Periode pengawasan berhasil diubah.');
     }
+
+    public function resetAnswers(Request $request) {
+        $selectedPeriodId = session('selected_period_id');
+        
+        if (!$selectedPeriodId) {
+            return back()->with('error', 'Pilih periode aktif terlebih dahulu.');
+        }
+
+        $userId = $request->input('user_id');
+        $organizationId = $request->input('organization_id');
+
+        $query = \App\Models\Answer::where('period_id', $selectedPeriodId);
+
+        if ($userId) {
+            $query->where('user_id', $userId);
+        } elseif ($organizationId) {
+            $query->whereHas('user', function($q) use ($organizationId) {
+                $q->where('organization_id', $organizationId);
+            });
+        }
+
+        // Get matching answers
+        $answers = $query->get();
+        $answerIds = $answers->pluck('id');
+
+        if ($answers->isEmpty()) {
+            return back()->with('success', 'Tidak ada data jawaban untuk dikosongkan.');
+        }
+
+        // Delete evidence files
+        $submissions = \App\Models\EvidenceSubmission::whereIn('answer_id', $answerIds)->get();
+        foreach ($submissions as $sub) {
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($sub->file_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($sub->file_path);
+            }
+            $sub->delete();
+        }
+
+        // Delete answers
+        \App\Models\Answer::whereIn('id', $answerIds)->delete();
+
+        $message = 'Seluruh jawaban telah dikosongkan.';
+        if ($userId) {
+            $user = \App\Models\User::find($userId);
+            $message = 'Jawaban untuk user ' . ($user->name ?? $userId) . ' telah dikosongkan.';
+        } elseif ($organizationId) {
+            $org = \App\Models\Organization::find($organizationId);
+            $message = 'Seluruh jawaban untuk organisasi ' . ($org->name ?? $organizationId) . ' telah dikosongkan.';
+        }
+
+        return back()->with('success', $message);
+    }
 }

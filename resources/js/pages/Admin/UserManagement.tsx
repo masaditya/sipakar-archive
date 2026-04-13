@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, Pencil, Trash2, X, Shield, UserCircle, Mail, Building2, Download, Trash } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, Shield, UserCircle, Mail, Building2, Download, Trash, RotateCcw } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export default function UserManagement({ users, organizations, filters }: any) {
@@ -234,6 +234,19 @@ export default function UserManagement({ users, organizations, filters }: any) {
                                             </div>
                                         </div>
                                         <div className="flex gap-2 shrink-0 self-end sm:self-center">
+                                            <Button 
+                                                variant="outline" 
+                                                size="icon" 
+                                                onClick={() => {
+                                                    if(confirm(`Kosongkan semua jawaban untuk user "${u.name}"?`)) {
+                                                        router.post('/admin/answers/reset', { user_id: u.id });
+                                                    }
+                                                }} 
+                                                title="Reset Jawaban User"
+                                                className="rounded-xl border-muted/30 hover:bg-orange-500 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <RotateCcw className="size-4" />
+                                            </Button>
                                             <Button variant="outline" size="icon" onClick={() => handleEditUser(u)} className="rounded-xl border-muted/30 hover:bg-primary hover:text-white transition-all shadow-sm">
                                                 <Pencil className="size-4" />
                                             </Button>

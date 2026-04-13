@@ -89,6 +89,21 @@ export default function CentralManagement({ aspects }: any) {
                             </span>
                         </p>
                     </div>
+
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            variant="destructive" 
+                            className="rounded-xl h-12 px-6 font-black text-xs uppercase tracking-widest shadow-lg hover:shadow-destructive/20 transition-all flex items-center gap-3"
+                            onClick={() => {
+                                if(confirm('PERINGATAN: Tindakan ini akan MENGHAPUS SELURUH JAWABAN dan BUKTI DUKUNG yang telah diunggah oleh seluruh user untuk periode ini. Tindakan ini tidak dapat dibatalkan. Lanjutkan?')) {
+                                    router.post('/admin/answers/reset');
+                                }
+                            }}
+                        >
+                            <Trash2 className="size-4" />
+                            Kosongkan Database Jawaban
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid lg:grid-cols-[400px_1fr] gap-8 items-start">
@@ -243,7 +258,7 @@ export default function CentralManagement({ aspects }: any) {
                                             <div className="bg-primary/5 border border-primary/20 rounded-3xl p-6">
                                                 <h4 className="font-black text-xs uppercase tracking-[0.2em] text-primary/60 mb-4 ml-1">Struktur Sub-Aspek</h4>
                                                 <form onSubmit={(e) => handleCreateSub(e, aspect.id)} className="flex flex-col sm:flex-row items-end gap-3">
-                                                    <div className="flex-[3] w-full space-y-2">
+                                                    <div className="flex-3 w-full space-y-2">
                                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Nama Sub-Aspek</Label>
                                                         <Input required placeholder="Contoh: 1. Tata Naskah Dinas" value={newSub.aspect_id === aspect.id.toString() ? newSub.name : ''} onChange={e => setNewSub({aspect_id: aspect.id.toString(), name: e.target.value, type: newSub.type, score_weight: newSub.score_weight})} className="h-11 rounded-xl bg-background border-primary/10 font-bold focus:ring-4 focus:ring-primary/10 shadow-sm" />
                                                     </div>

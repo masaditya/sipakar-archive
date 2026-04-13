@@ -55,6 +55,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/admin/review/{user}/rhas.pdf', [\App\Http\Controllers\AdminCMSController::class, 'generateRHAS'])->name('admin.review.rhas');
         Route::get('/admin/review/{user}/bab2.pdf', [\App\Http\Controllers\AdminCMSController::class, 'generateBab2'])->name('admin.review.bab2');
         Route::post('/admin/switch-period', [\App\Http\Controllers\AdminCMSController::class, 'switchPeriod'])->name('admin.switch_period');
+        Route::post('/admin/answers/reset', [\App\Http\Controllers\AdminCMSController::class, 'resetAnswers'])->name('admin.answers.reset');
     });
 });
 

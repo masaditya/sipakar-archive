@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, Pencil, Trash2, X } from 'lucide-react';
+import { Search, Plus, Pencil, Trash2, X, RotateCcw } from 'lucide-react';
 
 export default function OrganizationManagement({ organizations, filters }: any) {
     const initialFormState = { name: '', type: 'Dinas', address: '', phone: '', head_name: '', description: '' };
@@ -170,6 +170,19 @@ export default function OrganizationManagement({ organizations, filters }: any) 
                                             {org.address && <p className="text-xs font-medium text-muted-foreground opacity-60 leading-relaxed max-w-2xl mt-1">{org.address}</p>}
                                         </div>
                                         <div className="flex gap-2 shrink-0 self-end sm:self-center">
+                                            <Button 
+                                                variant="outline" 
+                                                size="icon" 
+                                                onClick={() => {
+                                                    if(confirm(`Kosongkan semua jawaban untuk SELURUH USER di organisasi "${org.name}"?`)) {
+                                                        router.post('/admin/answers/reset', { organization_id: org.id });
+                                                    }
+                                                }} 
+                                                title="Reset Jawaban Organisasi"
+                                                className="rounded-xl border-muted/30 hover:bg-orange-500 hover:text-white transition-all shadow-sm"
+                                            >
+                                                <RotateCcw className="size-4" />
+                                            </Button>
                                             <Button variant="outline" size="icon" onClick={() => handleEditOrg(org)} className="rounded-xl border-muted/30 hover:bg-primary hover:text-white transition-all shadow-sm">
                                                 <Pencil className="size-4" />
                                             </Button>
