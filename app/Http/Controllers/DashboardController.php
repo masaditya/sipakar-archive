@@ -300,4 +300,132 @@ class DashboardController extends Controller
 
         return redirect()->back()->with('success', 'File berhasil dihapus');
     }
+
+    public function generateReport(Request $request) {
+        $user = $request->user();
+        $user->load('organization');
+        $selectedPeriodId = session('selected_period_id');
+        $aspects = Aspect::where('period_id', $selectedPeriodId)->with(['subAspects.questions.answers' => function($q) use ($user, $selectedPeriodId) {
+            $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId)->with('option');
+        }])->get();
+
+        $total_skor_up = 0;
+        $total_skor_uk = 0;
+
+        foreach ($aspects as $aspect) {
+            // UP Compute
+            $upSubAspects = $aspect->subAspects->where('type', 'UP');
+            if ($upSubAspects->isNotEmpty()) {
+                $bobotAspek = $aspect->score_weight;
+                $subSkorSum = 0;
+                foreach ($upSubAspects as $sub) {
+                    $subQuestions = $sub->questions;
+                    $subNilaiStandar = $subQuestions->count() * 100;
+                    $subNilai = 0;
+                    foreach($subQuestions as $q) {
+                        $ans = $q->answers->first();
+                        if ($ans && $ans->status === 'completed' && $ans->option) {
+                            $subNilai += $ans->option->score;
+                        }
+                    }
+                    $subBobot = $sub->score_weight ?? 0;
+                    $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * $subBobot : 0;
+                    $subSkorSum += $subSkor;
+                }
+                $total_skor_up += $subSkorSum * ($bobotAspek / 100);
+            }
+
+            // UK Compute
+            $ukSubAspects = $aspect->subAspects->where('type', 'UK');
+            if ($ukSubAspects->isNotEmpty()) {
+                $bobotAspek = $aspect->score_weight;
+                $subSkorSum = 0;
+                foreach ($ukSubAspects as $sub) {
+                    $subQuestions = $sub->questions;
+                    $subNilaiStandar = $subQuestions->count() * 100;
+                    $subNilai = 0;
+                    foreach($subQuestions as $q) {
+                        $ans = $q->answers->first();
+                        if ($ans && $ans->status === 'completed' && $ans->option) {
+                            $subNilai += $ans->option->score;
+                        }
+                    }
+                    $subBobot = $sub->score_weight ?? 0;
+                    $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * $subBobot : 0;
+                    $subSkorSum += $subSkor;
+                }
+                $total_skor_uk += $subSkorSum * ($bobotAspek / 100);
+            }
+        }
+
+        $nilai_akhir = ($total_skor_up + $total_skor_uk) / 2;
+        $formatted_nilai = number_format(round($nilai_akhir, 2), 2, '.', '');
+
+        $inputs = [
+            'up_name' => $request->input('up_name', '...'),
+            'opd_name' => $request->input('opd_name', $user->organization->name ?? ''),
+            'ttd1_jabatan' => 'KEPALA DINAS PERPUSTAKAAN DAN KEARSIPAN',
+            'ttd1_nama' => 'ERICK FIRDAUS, ST.',
+            'ttd1_pangkat' => 'Pembina Tingkat I',
+            'ttd1_nip' => '19690726 200312 1 003',
+            'ttd2_jabatan' => $request->input('ttd2_jabatan', 'KEPALA ' . strtoupper($user->organization->name ?? 'OPD')),
+            'ttd2_nama' => $request->input('ttd2_nama', ''),
+            'ttd2_pangkat' => $request->input('ttd2_pangkat', ''),
+            'ttd2_nip' => $request->input('ttd2_nip', ''),
+            'tanggal' => \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y'),
+            'terbilang_nilai_akhir' => \Riskihajar\Terbilang\Facades\Terbilang::make($formatted_nilai) ? ucwords(\Riskihajar\Terbilang\Facades\Terbilang::make($formatted_nilai)) : '',
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.assessment-report', compact('user', 'aspects', 'inputs'))
+            ->setPaper([0, 0, 609.448, 935.433], 'portrait');
+            
+        if ($request->has('download')) {
+            return $pdf->download('Laporan-Pengawasan-'.$user->name.'.pdf');
+        }
+
+        return $pdf->stream('Laporan-Pengawasan-'.$user->name.'.pdf');
+    }
+
+    public function generateRHAS(Request $request) {
+        $user = $request->user();
+        $user->load('organization');
+        $selectedPeriodId = session('selected_period_id');
+        $type = $request->input('type', 'UP');
+
+        $aspects = Aspect::where('period_id', $selectedPeriodId)
+            ->whereHas('subAspects', function($q) use ($type) {
+                $q->where('type', $type);
+            })
+            ->with(['subAspects' => function($q) use ($type) {
+                $q->where('type', $type);
+            }, 'subAspects.questions.answers' => function($q) use ($user, $selectedPeriodId) {
+                $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId)->with('option');
+            }])->get();
+
+        $inputs = [
+            'type' => $type,
+            'up_name' => $request->input('up_name', '...'),
+            'opd_name' => $request->input('opd_name', $user->organization->name ?? ''),
+            'ttd1_jabatan' => 'KEPALA DINAS PERPUSTAKAAN DAN KEARSIPAN',
+            'ttd1_nama' => 'ERICK FIRDAUS, ST.',
+            'ttd1_pangkat' => 'Pembina Tingkat I',
+            'ttd1_nip' => '19690726 200312 1 003',
+            'ttd2_jabatan' => $request->input('ttd2_jabatan', 'KEPALA ' . strtoupper($user->organization->name ?? 'OPD')),
+            'ttd2_nama' => $request->input('ttd2_nama', ''),
+            'ttd2_pangkat' => $request->input('ttd2_pangkat', ''),
+            'ttd2_nip' => $request->input('ttd2_nip', ''),
+            'tanggal' => \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y'),
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.rhas', compact('user', 'aspects', 'inputs'))
+            ->setPaper([0, 0, 609.448, 935.433], 'landscape'); // Landscape F4
+            
+        $filename = 'RHAS-' . $type . '-' . $user->name . '.pdf';
+
+        if ($request->has('download')) {
+            return $pdf->download($filename);
+        }
+
+        return $pdf->stream($filename);
+    }
 }

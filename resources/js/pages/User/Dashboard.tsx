@@ -2,10 +2,32 @@ import { Head, Link } from '@inertiajs/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ClipboardList, TrendingUp, Building2, Activity, AlertCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle2, ClipboardList, TrendingUp, Building2, Activity, AlertCircle, ArrowRight, FileText, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState } from 'react';
 import HelpFloatingButton from '@/components/help-floating-button';
 
 export default function UserDashboard({ stats, organization }: any) {
+    const [rhasModalOpen, setRhasModalOpen] = useState(false);
+    const [rhasForm, setRhasForm] = useState({
+        type: 'UP',
+        up_name: 'Bidang ',
+        ttd2_jabatan: `KEPALA ${organization?.name?.toUpperCase() || 'INSTANSI'}`,
+        ttd2_nama: '',
+        ttd2_pangkat: '',
+        ttd2_nip: '',
+    });
+
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [reportForm, setReportForm] = useState({
+        up_name: 'Bidang ',
+        opd_name: organization?.name || '',
+        ttd2_jabatan: `KEPALA ${organization?.name?.toUpperCase() || 'INSTANSI'}`,
+        ttd2_nama: '',
+        ttd2_pangkat: '',
+        ttd2_nip: '',
+    });
+
     return (
         <>
             <Head title="Dashboard Pelaksana" />
@@ -31,12 +53,33 @@ export default function UserDashboard({ stats, organization }: any) {
                         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Selamat Datang, {organization?.name || 'Pelaksana'}</h1>
                         <p className="text-muted-foreground text-sm sm:text-base">Monitor progres pengawasan internal kearsipan Anda di sini.</p>
                     </div>
-                    <Button asChild size="lg" className="w-full sm:w-auto shadow-sm shrink-0">
-                        <Link href="/questionnaire">
-                            Isi Kuisioner Sekarang
-                            <ArrowRight className="w-4 h-4 ml-2" />
-                        </Link>
-                    </Button>
+                    <div className="flex flex-col sm:flex-row flex-wrap gap-2 shrink-0 w-full lg:w-auto">
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={() => {
+                                setRhasForm(prev => ({ ...prev, type: 'UP', up_name: 'Bidang ' }));
+                                setRhasModalOpen(true);
+                            }}
+                            className="w-full sm:w-auto border-blue-500/30 text-blue-600 bg-blue-50/50 hover:bg-blue-100/50 shadow-sm font-bold"
+                        >
+                            <FileText className="w-4 h-4 mr-2" /> Cetak RHAS
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="lg"
+                            onClick={() => setReportModalOpen(true)}
+                            className="w-full sm:w-auto border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm font-bold"
+                        >
+                            <Download className="w-4 h-4 mr-2" /> LAPORAN HASIL AKHIR
+                        </Button>
+                        <Button asChild size="lg" className="w-full sm:w-auto shadow-sm shrink-0">
+                            <Link href="/questionnaire">
+                                Isi Kuisioner Sekarang
+                                <ArrowRight className="w-4 h-4 ml-2" />
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -157,6 +200,147 @@ export default function UserDashboard({ stats, organization }: any) {
                     </CardHeader>
                 </Card>
             </div>
+
+            {/* Modal Input RHAS */}
+            <Dialog open={rhasModalOpen} onOpenChange={setRhasModalOpen}>
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto w-[95vw] rounded-2xl mx-auto border-none p-0">
+                    <DialogHeader className="p-6 pb-2 border-b bg-blue-50/50">
+                        <DialogTitle className="text-xl font-black text-blue-700">Cetak Risalah Hasil Audit Sementara (RHAS)</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-4 bg-muted/20 p-5 rounded-2xl border">
+                                <h3 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    Tipe RHAS
+                                </h3>
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant={rhasForm.type === 'UP' ? 'default' : 'outline'}
+                                        className="flex-1 font-bold"
+                                        onClick={() => setRhasForm({ ...rhasForm, type: 'UP', up_name: 'Bidang ' })}
+                                    >RHAS UP</Button>
+                                    <Button
+                                        type="button"
+                                        variant={rhasForm.type === 'UK' ? 'default' : 'outline'}
+                                        className="flex-1 font-bold"
+                                        onClick={() => setRhasForm({ ...rhasForm, type: 'UK', up_name: 'Sekretariat ' + (organization?.name || '') })}
+                                    >RHAS UK</Button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4 bg-muted/20 p-5 rounded-2xl border">
+                                <h3 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                    Informasi Unit
+                                </h3>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground">{rhasForm.type === 'UP' ? 'Nama Unit Pengolah (UP)' : 'Nama Unit Kearsipan (UK)'}</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value={rhasForm.up_name} onChange={e => setRhasForm({ ...rhasForm, up_name: e.target.value })} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 bg-muted/20 p-5 rounded-2xl border">
+                            <h3 className="font-black text-xs uppercase tracking-widest text-blue-600 flex items-center gap-2">
+                                <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+                                Informasi Penandatangan (Pihak Instansi)
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2 col-span-1 md:col-span-2">
+                                    <label className="text-xs font-bold text-muted-foreground">Jabatan</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={rhasForm.ttd2_jabatan} onChange={e => setRhasForm({ ...rhasForm, ttd2_jabatan: e.target.value })} />
+                                </div>
+                                <div className="space-y-2 col-span-1 md:col-span-2">
+                                    <label className="text-xs font-bold text-muted-foreground">Nama Lengkap</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={rhasForm.ttd2_nama} onChange={e => setRhasForm({ ...rhasForm, ttd2_nama: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground">Pangkat/Golongan</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={rhasForm.ttd2_pangkat} onChange={e => setRhasForm({ ...rhasForm, ttd2_pangkat: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground">NIP</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm tracking-wider" value={rhasForm.ttd2_nip} onChange={e => setRhasForm({ ...rhasForm, ttd2_nip: e.target.value })} />
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div className="p-6 bg-muted/40 border-t flex flex-col sm:flex-row justify-end gap-3 mt-auto">
+                        <Button variant="outline" className="rounded-xl w-full sm:w-auto h-11 px-8 font-bold" onClick={() => setRhasModalOpen(false)}>Batal</Button>
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-full sm:w-auto h-11 px-8 font-bold shadow-md hover:shadow-lg transition-all" onClick={() => {
+                            const params = new URLSearchParams(rhasForm as any).toString();
+                            window.open(`/dashboard/rhas.pdf?download=1&${params}`, '_blank');
+                            setRhasModalOpen(false);
+                        }}>
+                            <Download className="w-4 h-4 mr-2" />
+                            Unduh PDF RHAS
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            {/* Modal Input Laporan PDF */}
+            <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>
+                <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto w-[95vw] rounded-2xl mx-auto border-none p-0">
+                    <DialogHeader className="p-6 pb-2 border-b bg-muted/30">
+                        <DialogTitle className="text-xl font-black">Konfigurasi Laporan Hasil Akhir (BAB 3)</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 p-6">
+                        <div className="space-y-4 bg-muted/20 p-5 rounded-2xl border">
+                            <h3 className="font-black text-xs uppercase tracking-widest text-primary flex items-center gap-2">
+                                <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                Informasi Organisasi (Objek Pemeriksaan)
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground">Nama Unit Pengolah (UP)</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value={reportForm.up_name} onChange={e => setReportForm({ ...reportForm, up_name: e.target.value })} placeholder="Contoh: Bidang Kesehatan Masyarakat" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground">Nama Organisasi (UK/OPD)</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value={reportForm.opd_name} onChange={e => setReportForm({ ...reportForm, opd_name: e.target.value })} placeholder="Contoh: Dinas Kesehatan" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 bg-muted/20 p-5 rounded-2xl border">
+                            <h3 className="font-black text-xs uppercase tracking-widest text-blue-600 flex items-center gap-2">
+                                <div className="w-1.5 h-4 bg-blue-500 rounded-full"></div>
+                                Informasi Penandatangan Pihak Instansi
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2 col-span-1 md:col-span-2">
+                                    <label className="text-xs font-bold text-muted-foreground">Jabatan</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={reportForm.ttd2_jabatan} onChange={e => setReportForm({ ...reportForm, ttd2_jabatan: e.target.value })} />
+                                </div>
+                                <div className="space-y-2 col-span-1 md:col-span-2">
+                                    <label className="text-xs font-bold text-muted-foreground">Nama Lengkap</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={reportForm.ttd2_nama} onChange={e => setReportForm({ ...reportForm, ttd2_nama: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground">Pangkat/Golongan</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={reportForm.ttd2_pangkat} onChange={e => setReportForm({ ...reportForm, ttd2_pangkat: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-muted-foreground">NIP</label>
+                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm tracking-wider" value={reportForm.ttd2_nip} onChange={e => setReportForm({ ...reportForm, ttd2_nip: e.target.value })} />
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div className="p-6 bg-muted/40 border-t flex flex-col sm:flex-row justify-end gap-3 mt-auto">
+                        <Button variant="outline" className="rounded-xl w-full sm:w-auto h-11 px-8 font-bold" onClick={() => setReportModalOpen(false)}>Batal</Button>
+                        <Button className="bg-primary hover:bg-primary/90 text-white rounded-xl w-full sm:w-auto h-11 px-8 font-bold shadow-md hover:shadow-lg transition-all" onClick={() => {
+                            const params = new URLSearchParams(reportForm as any).toString();
+                            window.open(`/dashboard/report.pdf?download=1&${params}`, '_blank');
+                            setReportModalOpen(false);
+                        }}>Cetak dan Unduh PDF</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

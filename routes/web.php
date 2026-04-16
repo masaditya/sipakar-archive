@@ -16,6 +16,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/questionnaire/{question}', [DashboardController::class, 'questionnaireDetail'])->name('questionnaire.detail');
         Route::post('/dashboard/submit-answer', [DashboardController::class, 'submitAnswer'])->name('submit_answer');
         Route::delete('/dashboard/evidence/{submission}', [DashboardController::class, 'deleteEvidence'])->name('delete_evidence');
+        Route::get('/dashboard/rhas.pdf', [DashboardController::class, 'generateRHAS'])->name('user.rhas');
+        Route::get('/dashboard/report.pdf', [DashboardController::class, 'generateReport'])->name('user.report');
     });
 
     // Admin CMS routes
