@@ -2,11 +2,17 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FilePreviewModal } from '@/components/file-preview-modal';
 import { useState, useMemo, useEffect } from 'react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function AnswerNotes({ answer }: { answer: any }) {
     const [notes, setNotes] = useState(answer.notes || '');
@@ -178,6 +184,28 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
             preserveState: true,
         });
     };
+
+    const navigateQuestion = (direction: 'next' | 'prev') => {
+        const currentIndex = filteredQuestions.findIndex((q: any) => q.id === selectedQuestionId);
+        if (direction === 'next' && currentIndex < filteredQuestions.length - 1) {
+            setSelectedQuestionId(filteredQuestions[currentIndex + 1].id);
+        } else if (direction === 'prev' && currentIndex > 0) {
+            setSelectedQuestionId(filteredQuestions[currentIndex - 1].id);
+        }
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!selectedQuestionId) return;
+            
+            if (e.key === 'Escape') setSelectedQuestionId(null);
+            if (e.key === 'ArrowLeft') navigateQuestion('prev');
+            if (e.key === 'ArrowRight') navigateQuestion('next');
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedQuestionId, filteredQuestions]);
 
     const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
 
@@ -523,6 +551,66 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                     )}
                 </div>
             </div>
+
+            {selectedQuestion && (
+                <TooltipProvider>
+                    <div className="fixed top-1/2 -translate-y-1/2 right-6 md:right-10 flex flex-col gap-5 z-[60] animate-in slide-in-from-right-10 duration-300">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    className="h-16 w-16 rounded-full shadow-[0_10px_40px_rgba(239,68,68,0.3)] bg-destructive hover:bg-destructive/90 text-white border-none transition-all hover:scale-110 active:scale-95 group"
+                                    onClick={() => setSelectedQuestionId(null)}
+                                >
+                                    <X className="w-8 h-8 text-white group-hover:rotate-90 transition-transform duration-300" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left" className="bg-destructive text-white font-bold border-none shadow-xl">
+                                Tutup Detail (ESC)
+                            </TooltipContent>
+                        </Tooltip>
+                        
+                        <div className="flex flex-col gap-4 bg-background/60 backdrop-blur-xl p-3 rounded-full border shadow-2xl ring-1 ring-black/5">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-14 w-14 rounded-full hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                                        onClick={() => navigateQuestion('prev')}
+                                        disabled={filteredQuestions.findIndex((q: any) => q.id === selectedQuestionId) === 0}
+                                    >
+                                        <ChevronLeft className="w-8 h-8" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="font-bold">
+                                    Sebelumnya (←)
+                                </TooltipContent>
+                            </Tooltip>
+                            
+                            <div className="h-px w-10 mx-auto bg-muted/60" />
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-14 w-14 rounded-full hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                                        onClick={() => navigateQuestion('next')}
+                                        disabled={filteredQuestions.findIndex((q: any) => q.id === selectedQuestionId) === filteredQuestions.length - 1}
+                                    >
+                                        <ChevronRight className="w-8 h-8" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="left" className="font-bold">
+                                    Berikutnya (→)
+                                </TooltipContent>
+                            </Tooltip>
+                        </div>
+                    </div>
+                </TooltipProvider>
+            )}
 
             <style>{`
                 .ql-editor-mini {
