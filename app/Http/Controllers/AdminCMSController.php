@@ -544,7 +544,7 @@ class AdminCMSController extends Controller
             mkdir($tempDir, 0755, true);
         }
 
-        $zipPath = $tempDir.'/evidence-'.$user->id.'-'.uniqid().'.zip';
+        $zipPath = $tempDir.DIRECTORY_SEPARATOR.'evidence-'.$user->id.'-'.uniqid('', true).'.zip';
         $zip = new \ZipArchive;
         if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
             abort(500, 'Gagal membuat arsip ZIP.');
@@ -581,30 +581,54 @@ class AdminCMSController extends Controller
                             continue;
                         }
 
+                        $contents = $disk->get($evidence->file_path);
+                        if ($contents === null || $contents === '') {
+                            continue;
+                        }
+
                         $entryName = $this->uniqueZipFileName($evidence->original_name, $usedFileNames);
                         $usedFileNames[] = $entryName;
+                        $entryPath = str_replace('\\', '/', "{$basePath}/{$entryName}");
 
-                        $zip->addFile(
-                            $disk->path($evidence->file_path),
-                            "{$basePath}/{$entryName}"
-                        );
+                        if ($zip->addFromString($entryPath, $contents) !== true) {
+                            continue;
+                        }
+
                         $fileCount++;
                     }
                 }
             }
         }
 
-        $zip->close();
+        if ($zip->close() !== true) {
+            @unlink($zipPath);
+            abort(500, 'Gagal menyelesaikan arsip ZIP.');
+        }
 
-        if ($fileCount === 0) {
+        if ($fileCount === 0 || ! is_file($zipPath) || filesize($zipPath) === 0) {
             @unlink($zipPath);
             abort(404, 'Tidak ada bukti dukung untuk diunduh.');
         }
 
+        $verifyZip = new \ZipArchive;
+        if ($verifyZip->open($zipPath) !== true || $verifyZip->numFiles === 0) {
+            $verifyZip->close();
+            @unlink($zipPath);
+            abort(500, 'Arsip ZIP tidak valid.');
+        }
+        $verifyZip->close();
+
         $orgName = $user->organization->name ?? $user->name;
         $zipFilename = 'Bukti-Dukung-'.$this->sanitizeZipPathSegment($orgName).'.zip';
+        $zipSize = filesize($zipPath);
 
-        return response()->download($zipPath, $zipFilename)->deleteFileAfterSend(true);
+        return response()->file($zipPath, [
+            'Content-Type' => 'application/zip',
+            'Content-Disposition' => 'attachment; filename="'.$zipFilename.'"',
+            'Content-Length' => $zipSize,
+            'Cache-Control' => 'no-store, no-cache, must-revalidate',
+            'Pragma' => 'no-cache',
+        ])->deleteFileAfterSend(true);
     }
 
     private function sanitizeZipPathSegment(string $name): string
@@ -613,8 +637,15 @@ class AdminCMSController extends Controller
         $name = preg_replace('/[<>:"\/\\\\|?*\x00-\x1F]/u', '', $name) ?? '';
         $name = preg_replace('/\s+/u', ' ', trim($name)) ?? '';
 
+        $name = rtrim($name, ". \t");
+
         if ($name === '') {
             return 'Tanpa-Nama';
+        }
+
+        $reserved = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
+        if (in_array(strtoupper($name), $reserved, true)) {
+            $name = "_{$name}";
         }
 
         return mb_substr($name, 0, 120);

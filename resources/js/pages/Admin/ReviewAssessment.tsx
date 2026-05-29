@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye, Archive } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { FilePreviewModal } from '@/components/file-preview-modal';
 import { useState, useMemo, useEffect } from 'react';
 import {
@@ -76,6 +77,11 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
 
     const [previewModal, setPreviewModal] = useState({ isOpen: false, url: '', name: '' });
     const [isDownloadingEvidence, setIsDownloadingEvidence] = useState(false);
+    const [evidenceDownload, setEvidenceDownload] = useState<{
+        open: boolean;
+        phase: 'preparing' | 'downloading' | 'done';
+        progress: number;
+    }>({ open: false, phase: 'preparing', progress: 0 });
     const [statusFilter, setStatusFilter] = useState('all');
     const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
 
@@ -181,27 +187,93 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
 
     const downloadEvidenceZip = async () => {
         setIsDownloadingEvidence(true);
+        setEvidenceDownload({ open: true, phase: 'preparing', progress: 0 });
+
+        const closeProgress = () => {
+            setTimeout(() => {
+                setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
+            }, 600);
+        };
+
         try {
             const res = await fetch(`/admin/review/${pelaksana.id}/evidence.zip`, {
                 credentials: 'same-origin',
+                headers: { Accept: 'application/zip' },
             });
+
             if (!res.ok) {
+                setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
                 alert(res.status === 404
                     ? 'Tidak ada bukti dukung yang dapat diunduh untuk pelaksana ini.'
                     : 'Gagal mengunduh rekap bukti dukung. Silakan coba lagi.');
                 return;
             }
-            const blob = await res.blob();
+
             const disposition = res.headers.get('Content-Disposition') ?? '';
             const match = disposition.match(/filename="?([^";]+)"?/i);
             const filename = match?.[1] ?? `Bukti-Dukung-${pelaksana.organization?.name || pelaksana.name}.zip`;
+            const contentLength = Number(res.headers.get('Content-Length') || 0);
+            const reader = res.body?.getReader();
+
+            let blob: Blob;
+
+            if (reader) {
+                const chunks: Uint8Array[] = [];
+                let received = 0;
+
+                setEvidenceDownload({
+                    open: true,
+                    phase: 'downloading',
+                    progress: contentLength > 0 ? 0 : 15,
+                });
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    received += value.length;
+
+                    if (contentLength > 0) {
+                        setEvidenceDownload({
+                            open: true,
+                            phase: 'downloading',
+                            progress: Math.min(99, Math.round((received / contentLength) * 100)),
+                        });
+                    } else {
+                        setEvidenceDownload((prev) => ({
+                            open: true,
+                            phase: 'downloading',
+                            progress: Math.min(95, prev.progress + 2),
+                        }));
+                    }
+                }
+
+                blob = new Blob(chunks as BlobPart[], { type: 'application/zip' });
+            } else {
+                blob = await res.blob();
+            }
+
+            const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+            const isZip = header[0] === 0x50 && header[1] === 0x4B
+                && (header[2] === 0x03 || header[2] === 0x05 || header[2] === 0x07);
+
+            if (!isZip) {
+                setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
+                alert('File unduhan tidak valid. Silakan coba lagi atau hubungi administrator.');
+                return;
+            }
+
+            setEvidenceDownload({ open: true, phase: 'done', progress: 100 });
+
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
             link.download = filename;
             link.click();
             URL.revokeObjectURL(url);
+            closeProgress();
         } catch {
+            setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
             alert('Gagal mengunduh rekap bukti dukung. Silakan coba lagi.');
         } finally {
             setIsDownloadingEvidence(false);
@@ -707,6 +779,39 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                 fileUrl={previewModal.url}
                 fileName={previewModal.name}
             />
+
+            <Dialog open={evidenceDownload.open} onOpenChange={(open) => {
+                if (!open && !isDownloadingEvidence) {
+                    setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
+                }
+            }}>
+                <DialogContent className="max-w-md rounded-2xl" onPointerDownOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle className="text-lg font-black">Mengunduh Bukti Dukung</DialogTitle>
+                        <DialogDescription className="text-sm text-muted-foreground">
+                            {evidenceDownload.phase === 'preparing' && 'Menyiapkan arsip ZIP dari seluruh bukti dukung...'}
+                            {evidenceDownload.phase === 'downloading' && 'Mengunduh arsip ke perangkat Anda...'}
+                            {evidenceDownload.phase === 'done' && 'Unduhan selesai.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3 py-2">
+                        {evidenceDownload.phase === 'preparing' ? (
+                            <div className="relative h-2 w-full overflow-hidden rounded-full bg-primary/20">
+                                <div className="h-full w-2/5 rounded-full bg-primary animate-pulse" />
+                            </div>
+                        ) : (
+                            <Progress value={evidenceDownload.progress} className="h-2" />
+                        )}
+                        <p className="text-xs font-bold text-muted-foreground text-center tabular-nums">
+                            {evidenceDownload.phase === 'preparing'
+                                ? 'Mohon tunggu, proses ini dapat memakan waktu...'
+                                : evidenceDownload.phase === 'done'
+                                    ? '100% — File siap dibuka'
+                                    : `${evidenceDownload.progress}%`}
+                        </p>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Modal Input Laporan PDF */}
             <Dialog open={reportModalOpen} onOpenChange={setReportModalOpen}>
