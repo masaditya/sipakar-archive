@@ -550,7 +550,7 @@ class AdminCMSController extends Controller
             abort(500, 'Gagal membuat arsip ZIP.');
         }
 
-        $fileCount = 0;
+        $entryCount = 0;
         $disk = \Illuminate\Support\Facades\Storage::disk('public');
 
         foreach ($aspects as $aspect) {
@@ -561,11 +561,6 @@ class AdminCMSController extends Controller
                 $usedQuestionFolders = [];
 
                 foreach ($sub->questions as $question) {
-                    $answer = $question->answers->first();
-                    if (! $answer || $answer->evidenceSubmissions->isEmpty()) {
-                        continue;
-                    }
-
                     $questionFolder = $this->sanitizeZipPathSegment(strip_tags($question->text));
                     if (isset($usedQuestionFolders[$questionFolder])) {
                         $questionFolder .= ' ('.$question->id.')';
@@ -573,28 +568,38 @@ class AdminCMSController extends Controller
                         $usedQuestionFolders[$questionFolder] = true;
                     }
 
-                    $basePath = "{$aspectFolder}/{$subFolder}/{$questionFolder}";
+                    $basePath = str_replace('\\', '/', "{$aspectFolder}/{$subFolder}/{$questionFolder}");
+                    $answer = $question->answers->first();
                     $usedFileNames = [];
+                    $addedFiles = 0;
 
-                    foreach ($answer->evidenceSubmissions as $evidence) {
-                        if (! $disk->exists($evidence->file_path)) {
-                            continue;
+                    if ($answer) {
+                        foreach ($answer->evidenceSubmissions as $evidence) {
+                            if (! $disk->exists($evidence->file_path)) {
+                                continue;
+                            }
+
+                            $absolutePath = $disk->path($evidence->file_path);
+                            if (! is_readable($absolutePath)) {
+                                continue;
+                            }
+
+                            $entryName = $this->uniqueZipFileName($evidence->original_name, $usedFileNames);
+                            $usedFileNames[] = $entryName;
+                            $entryPath = "{$basePath}/{$entryName}";
+
+                            if ($zip->addFile($absolutePath, $entryPath) === true) {
+                                $addedFiles++;
+                            }
                         }
+                    }
 
-                        $contents = $disk->get($evidence->file_path);
-                        if ($contents === null || $contents === '') {
-                            continue;
+                    if ($addedFiles === 0) {
+                        if ($zip->addEmptyDir($basePath) === true) {
+                            $entryCount++;
                         }
-
-                        $entryName = $this->uniqueZipFileName($evidence->original_name, $usedFileNames);
-                        $usedFileNames[] = $entryName;
-                        $entryPath = str_replace('\\', '/', "{$basePath}/{$entryName}");
-
-                        if ($zip->addFromString($entryPath, $contents) !== true) {
-                            continue;
-                        }
-
-                        $fileCount++;
+                    } else {
+                        $entryCount += $addedFiles;
                     }
                 }
             }
@@ -605,14 +610,17 @@ class AdminCMSController extends Controller
             abort(500, 'Gagal menyelesaikan arsip ZIP.');
         }
 
-        if ($fileCount === 0 || ! is_file($zipPath) || filesize($zipPath) === 0) {
+        if ($entryCount === 0 || ! is_file($zipPath) || filesize($zipPath) < 22) {
             @unlink($zipPath);
-            abort(404, 'Tidak ada bukti dukung untuk diunduh.');
+            abort(404, 'Tidak ada data kuisioner untuk diunduh.');
         }
 
         $verifyZip = new \ZipArchive;
-        if ($verifyZip->open($zipPath) !== true || $verifyZip->numFiles === 0) {
-            $verifyZip->close();
+        $verifyOpened = $verifyZip->open($zipPath);
+        if ($verifyOpened !== true || $verifyZip->numFiles === 0) {
+            if ($verifyOpened === true) {
+                $verifyZip->close();
+            }
             @unlink($zipPath);
             abort(500, 'Arsip ZIP tidak valid.');
         }
@@ -620,15 +628,21 @@ class AdminCMSController extends Controller
 
         $orgName = $user->organization->name ?? $user->name;
         $zipFilename = 'Bukti-Dukung-'.$this->sanitizeZipPathSegment($orgName).'.zip';
-        $zipSize = filesize($zipPath);
+        $zipBinary = file_get_contents($zipPath);
+        @unlink($zipPath);
 
-        return response()->file($zipPath, [
+        if ($zipBinary === false || strlen($zipBinary) < 22) {
+            abort(500, 'Gagal membaca arsip ZIP.');
+        }
+
+        return response($zipBinary, 200, [
             'Content-Type' => 'application/zip',
             'Content-Disposition' => 'attachment; filename="'.$zipFilename.'"',
-            'Content-Length' => $zipSize,
+            'Content-Length' => strlen($zipBinary),
+            'Content-Transfer-Encoding' => 'binary',
             'Cache-Control' => 'no-store, no-cache, must-revalidate',
             'Pragma' => 'no-cache',
-        ])->deleteFileAfterSend(true);
+        ]);
     }
 
     private function sanitizeZipPathSegment(string $name): string

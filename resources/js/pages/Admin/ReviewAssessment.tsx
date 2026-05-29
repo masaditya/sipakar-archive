@@ -185,99 +185,30 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
         setPreviewModal({ isOpen: true, url, name });
     };
 
-    const downloadEvidenceZip = async () => {
+    const downloadEvidenceZip = () => {
         setIsDownloadingEvidence(true);
         setEvidenceDownload({ open: true, phase: 'preparing', progress: 0 });
 
-        const closeProgress = () => {
+        const downloadUrl = `/admin/review/${pelaksana.id}/evidence.zip`;
+
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setTimeout(() => {
+            setEvidenceDownload({ open: true, phase: 'downloading', progress: 60 });
+        }, 1200);
+
+        setTimeout(() => {
+            setEvidenceDownload({ open: true, phase: 'done', progress: 100 });
             setTimeout(() => {
                 setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
-            }, 600);
-        };
-
-        try {
-            const res = await fetch(`/admin/review/${pelaksana.id}/evidence.zip`, {
-                credentials: 'same-origin',
-                headers: { Accept: 'application/zip' },
-            });
-
-            if (!res.ok) {
-                setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
-                alert(res.status === 404
-                    ? 'Tidak ada bukti dukung yang dapat diunduh untuk pelaksana ini.'
-                    : 'Gagal mengunduh rekap bukti dukung. Silakan coba lagi.');
-                return;
-            }
-
-            const disposition = res.headers.get('Content-Disposition') ?? '';
-            const match = disposition.match(/filename="?([^";]+)"?/i);
-            const filename = match?.[1] ?? `Bukti-Dukung-${pelaksana.organization?.name || pelaksana.name}.zip`;
-            const contentLength = Number(res.headers.get('Content-Length') || 0);
-            const reader = res.body?.getReader();
-
-            let blob: Blob;
-
-            if (reader) {
-                const chunks: Uint8Array[] = [];
-                let received = 0;
-
-                setEvidenceDownload({
-                    open: true,
-                    phase: 'downloading',
-                    progress: contentLength > 0 ? 0 : 15,
-                });
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    chunks.push(value);
-                    received += value.length;
-
-                    if (contentLength > 0) {
-                        setEvidenceDownload({
-                            open: true,
-                            phase: 'downloading',
-                            progress: Math.min(99, Math.round((received / contentLength) * 100)),
-                        });
-                    } else {
-                        setEvidenceDownload((prev) => ({
-                            open: true,
-                            phase: 'downloading',
-                            progress: Math.min(95, prev.progress + 2),
-                        }));
-                    }
-                }
-
-                blob = new Blob(chunks as BlobPart[], { type: 'application/zip' });
-            } else {
-                blob = await res.blob();
-            }
-
-            const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
-            const isZip = header[0] === 0x50 && header[1] === 0x4B
-                && (header[2] === 0x03 || header[2] === 0x05 || header[2] === 0x07);
-
-            if (!isZip) {
-                setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
-                alert('File unduhan tidak valid. Silakan coba lagi atau hubungi administrator.');
-                return;
-            }
-
-            setEvidenceDownload({ open: true, phase: 'done', progress: 100 });
-
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = filename;
-            link.click();
-            URL.revokeObjectURL(url);
-            closeProgress();
-        } catch {
-            setEvidenceDownload({ open: false, phase: 'preparing', progress: 0 });
-            alert('Gagal mengunduh rekap bukti dukung. Silakan coba lagi.');
-        } finally {
-            setIsDownloadingEvidence(false);
-        }
+                setIsDownloadingEvidence(false);
+            }, 800);
+        }, 2500);
     };
 
     const handleStatusChange = (answerId: number, newStatus: string) => {
