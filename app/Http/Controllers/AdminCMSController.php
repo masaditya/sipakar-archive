@@ -522,6 +522,128 @@ class AdminCMSController extends Controller
         return $pdf->stream($filename);
     }
 
+    public function downloadEvidenceZip(User $user)
+    {
+        $selectedPeriodId = session('selected_period_id');
+        if (! $selectedPeriodId) {
+            abort(400, 'Pilih periode aktif terlebih dahulu.');
+        }
+
+        $user->load('organization');
+
+        $aspects = Aspect::where('period_id', $selectedPeriodId)
+            ->with(['subAspects.questions.answers' => function ($q) use ($user, $selectedPeriodId) {
+                $q->where('user_id', $user->id)
+                    ->where('period_id', $selectedPeriodId)
+                    ->with('evidenceSubmissions');
+            }])
+            ->get();
+
+        $tempDir = storage_path('app/temp');
+        if (! is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $zipPath = $tempDir.'/evidence-'.$user->id.'-'.uniqid().'.zip';
+        $zip = new \ZipArchive;
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true) {
+            abort(500, 'Gagal membuat arsip ZIP.');
+        }
+
+        $fileCount = 0;
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+
+        foreach ($aspects as $aspect) {
+            $aspectFolder = $this->sanitizeZipPathSegment($aspect->name);
+
+            foreach ($aspect->subAspects as $sub) {
+                $subFolder = $this->sanitizeZipPathSegment($sub->name);
+                $usedQuestionFolders = [];
+
+                foreach ($sub->questions as $question) {
+                    $answer = $question->answers->first();
+                    if (! $answer || $answer->evidenceSubmissions->isEmpty()) {
+                        continue;
+                    }
+
+                    $questionFolder = $this->sanitizeZipPathSegment(strip_tags($question->text));
+                    if (isset($usedQuestionFolders[$questionFolder])) {
+                        $questionFolder .= ' ('.$question->id.')';
+                    } else {
+                        $usedQuestionFolders[$questionFolder] = true;
+                    }
+
+                    $basePath = "{$aspectFolder}/{$subFolder}/{$questionFolder}";
+                    $usedFileNames = [];
+
+                    foreach ($answer->evidenceSubmissions as $evidence) {
+                        if (! $disk->exists($evidence->file_path)) {
+                            continue;
+                        }
+
+                        $entryName = $this->uniqueZipFileName($evidence->original_name, $usedFileNames);
+                        $usedFileNames[] = $entryName;
+
+                        $zip->addFile(
+                            $disk->path($evidence->file_path),
+                            "{$basePath}/{$entryName}"
+                        );
+                        $fileCount++;
+                    }
+                }
+            }
+        }
+
+        $zip->close();
+
+        if ($fileCount === 0) {
+            @unlink($zipPath);
+            abort(404, 'Tidak ada bukti dukung untuk diunduh.');
+        }
+
+        $orgName = $user->organization->name ?? $user->name;
+        $zipFilename = 'Bukti-Dukung-'.$this->sanitizeZipPathSegment($orgName).'.zip';
+
+        return response()->download($zipPath, $zipFilename)->deleteFileAfterSend(true);
+    }
+
+    private function sanitizeZipPathSegment(string $name): string
+    {
+        $name = html_entity_decode(strip_tags($name), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $name = preg_replace('/[<>:"\/\\\\|?*\x00-\x1F]/u', '', $name) ?? '';
+        $name = preg_replace('/\s+/u', ' ', trim($name)) ?? '';
+
+        if ($name === '') {
+            return 'Tanpa-Nama';
+        }
+
+        return mb_substr($name, 0, 120);
+    }
+
+    /**
+     * @param  array<int, string>  $usedNames
+     */
+    private function uniqueZipFileName(string $originalName, array &$usedNames): string
+    {
+        $baseName = $this->sanitizeZipPathSegment($originalName);
+        if (! in_array($baseName, $usedNames, true)) {
+            return $baseName;
+        }
+
+        $ext = pathinfo($baseName, PATHINFO_EXTENSION);
+        $name = pathinfo($baseName, PATHINFO_FILENAME);
+        $counter = 2;
+
+        do {
+            $candidate = $ext !== '' && $ext !== $baseName
+                ? "{$name} ({$counter}).{$ext}"
+                : "{$baseName} ({$counter})";
+            $counter++;
+        } while (in_array($candidate, $usedNames, true));
+
+        return $candidate;
+    }
+
     public function switchPeriod(Request $request) {
         $validated = $request->validate([
             'period_id' => 'required|exists:periods,id'

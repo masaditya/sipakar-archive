@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye, Archive } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FilePreviewModal } from '@/components/file-preview-modal';
@@ -75,6 +75,7 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
     };
 
     const [previewModal, setPreviewModal] = useState({ isOpen: false, url: '', name: '' });
+    const [isDownloadingEvidence, setIsDownloadingEvidence] = useState(false);
     const [statusFilter, setStatusFilter] = useState('all');
     const [selectedQuestionId, setSelectedQuestionId] = useState<number | null>(null);
 
@@ -178,6 +179,35 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
         setPreviewModal({ isOpen: true, url, name });
     };
 
+    const downloadEvidenceZip = async () => {
+        setIsDownloadingEvidence(true);
+        try {
+            const res = await fetch(`/admin/review/${pelaksana.id}/evidence.zip`, {
+                credentials: 'same-origin',
+            });
+            if (!res.ok) {
+                alert(res.status === 404
+                    ? 'Tidak ada bukti dukung yang dapat diunduh untuk pelaksana ini.'
+                    : 'Gagal mengunduh rekap bukti dukung. Silakan coba lagi.');
+                return;
+            }
+            const blob = await res.blob();
+            const disposition = res.headers.get('Content-Disposition') ?? '';
+            const match = disposition.match(/filename="?([^";]+)"?/i);
+            const filename = match?.[1] ?? `Bukti-Dukung-${pelaksana.organization?.name || pelaksana.name}.zip`;
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.click();
+            URL.revokeObjectURL(url);
+        } catch {
+            alert('Gagal mengunduh rekap bukti dukung. Silakan coba lagi.');
+        } finally {
+            setIsDownloadingEvidence(false);
+        }
+    };
+
     const handleStatusChange = (answerId: number, newStatus: string) => {
         router.put(`/admin/answers/${answerId}/status`, { status: newStatus }, {
             preserveScroll: true,
@@ -228,18 +258,18 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                 <div className="flex flex-col gap-5 border-b pb-6">
                     <div className="space-y-3 w-full">
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                            <div>
+                            <div className="max-w-xl">
                                 <Link href="/dashboard" className="text-sm font-bold text-muted-foreground hover:text-primary flex items-center gap-1 mb-2 transition-colors uppercase tracking-widest w-fit">
                                     <ChevronLeft className="w-3 h-3" /> Kembali ke Dashboard
                                 </Link>
                                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">{pelaksana.organization?.name}</h1>
-                                <div className="text-muted-foreground text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 font-medium mt-2">
+                                {/* <div className="text-muted-foreground text-sm flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 font-medium mt-2">
                                     <span className="flex items-center gap-1"><span className="opacity-60">PIC:</span> {pelaksana.name}</span>
                                     <span className="hidden sm:inline opacity-30">•</span>
                                     <span className="flex items-center gap-1"><span className="opacity-60">Email:</span> {pelaksana.email}</span>
-                                </div>
+                                </div> */}
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-2 mt-1 lg:mt-6 shrink-0">
+                            <div className="flex flex-col flex-wrap max-w-xl justify-end sm:flex-row gap-2 mt-1 lg:mt-6 shrink-0">
                                 <Button
                                     variant="outline"
                                     size="sm"
@@ -269,6 +299,16 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                     className="border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 shadow-sm w-full sm:w-auto"
                                 >
                                     <Download className="w-4 h-4 mr-2" /> Cetak BAB 3
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={downloadEvidenceZip}
+                                    disabled={isDownloadingEvidence}
+                                    className="border-violet-500/30 text-violet-600 bg-violet-50/50 hover:bg-violet-100/50 shadow-sm w-full sm:w-auto"
+                                >
+                                    <Archive className="w-4 h-4 mr-2" />
+                                    {isDownloadingEvidence ? 'Menyiapkan ZIP...' : 'Unduh Bukti Dukung'}
                                 </Button>
                             </div>
                         </div>
