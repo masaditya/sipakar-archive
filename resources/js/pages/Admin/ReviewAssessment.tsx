@@ -2,7 +2,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye, Archive } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye, Archive, Calculator } from 'lucide-react';
+import { renderHelperCalculator } from '@/components/AuditCalculators';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
@@ -19,6 +20,12 @@ function AnswerNotes({ answer }: { answer: any }) {
     const [notes, setNotes] = useState(answer.notes || '');
     const [recommendation, setRecommendation] = useState(answer.recommendation || '');
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setNotes(answer.notes || '');
+        setRecommendation(answer.recommendation || '');
+        setIsSaving(false);
+    }, [answer.id]);
 
     const handleSave = () => {
         setIsSaving(true);
@@ -402,10 +409,15 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                                                     </div>
                                                                 )}
                                                                 <CardHeader className="p-4 pb-0 space-y-3 border-none flex-none pr-12">
-                                                                    <div className="flex flex-col items-start gap-2">
+                                                                    <div className="flex flex-wrap items-center gap-2">
                                                                         <Badge variant="outline" className={`text-xs uppercase font-bold px-2.5 py-0.5 rounded-md ${statusConfig?.color}`}>
                                                                             {statusConfig?.label}
                                                                         </Badge>
+                                                                        {q.helper && (
+                                                                            <div className="p-0.5 bg-primary/10 text-primary rounded border border-primary/20" title="Tersedia Kalkulator Bantu">
+                                                                                <Calculator className="w-3 h-3" />
+                                                                            </div>
+                                                                        )}
                                                                         {answer && <div className="text-xs font-black text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20 shadow-xs">SKOR: {answer.option?.score || 0}</div>}
                                                                     </div>
                                                                 </CardHeader>
@@ -464,7 +476,8 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                 </div>
                             </div>
 
-                            <Card className="border-none shadow-lg ring-1 ring-inset ring-primary/10 bg-card overflow-hidden rounded-3xl">
+                            <div className={`grid grid-cols-1 gap-6 ${selectedQuestion.helper ? 'lg:grid-cols-12' : ''}`}>
+                            <Card className={`border-none shadow-lg ring-1 ring-inset ring-primary/10 bg-card overflow-hidden rounded-3xl ${selectedQuestion.helper ? 'lg:col-span-8' : ''}`}>
                                 <CardHeader className="p-6 md:p-8 md:pb-6 bg-gradient-to-b from-muted/30 to-transparent border-b">
                                     <div className="flex flex-col md:flex-row justify-between items-start gap-6">
                                         <div className="space-y-3 flex-1">
@@ -575,7 +588,7 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                                 )}
                                             </div>
 
-                                            <AnswerNotes answer={selectedQuestion.answer} />
+                                            <AnswerNotes key={selectedQuestion.answer.id} answer={selectedQuestion.answer} />
                                         </>
                                     ) : (
                                         <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 bg-muted/10 rounded-3xl border border-dashed">
@@ -590,6 +603,13 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                     )}
                                 </CardContent>
                             </Card>
+
+                            {selectedQuestion.helper && (
+                                <div key={selectedQuestion.id} className="lg:col-span-4 lg:sticky lg:top-6 h-fit">
+                                    {renderHelperCalculator(selectedQuestion.helper)}
+                                </div>
+                            )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -597,16 +617,16 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
 
             {selectedQuestion && (
                 <TooltipProvider>
-                    <div className="fixed top-1/2 -translate-y-1/2 right-6 md:right-10 flex flex-col gap-5 z-[60] animate-in slide-in-from-right-10 duration-300">
+                    <div className="fixed top-1/2 -translate-y-1/2 right-4 md:right-6 flex flex-col gap-2.5 z-[60] animate-in slide-in-from-right-10 duration-300">
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
                                     variant="destructive"
                                     size="icon"
-                                    className="h-16 w-16 rounded-full shadow-[0_10px_40px_rgba(239,68,68,0.3)] bg-destructive hover:bg-destructive/90 text-white border-none transition-all hover:scale-110 active:scale-95 group"
+                                    className="h-10 w-10 rounded-full shadow-md bg-destructive hover:bg-destructive/90 text-white border-none transition-all hover:scale-105 active:scale-95 group"
                                     onClick={() => setSelectedQuestionId(null)}
                                 >
-                                    <X className="w-8 h-8 text-white group-hover:rotate-90 transition-transform duration-300" />
+                                    <X className="w-4 h-4 text-white group-hover:rotate-90 transition-transform duration-300" />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent side="left" className="bg-destructive text-white font-bold border-none shadow-xl">
@@ -614,17 +634,17 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                             </TooltipContent>
                         </Tooltip>
                         
-                        <div className="flex flex-col gap-4 bg-background/60 backdrop-blur-xl p-3 rounded-full border shadow-2xl ring-1 ring-black/5">
+                        <div className="flex flex-col gap-1.5 bg-background/60 backdrop-blur-xl p-1.5 rounded-full border shadow-lg ring-1 ring-black/5">
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-14 w-14 rounded-full hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                                        className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed"
                                         onClick={() => navigateQuestion('prev')}
                                         disabled={filteredQuestions.findIndex((q: any) => q.id === selectedQuestionId) === 0}
                                     >
-                                        <ChevronLeft className="w-8 h-8" />
+                                        <ChevronLeft className="w-5 h-5" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="left" className="font-bold">
@@ -632,18 +652,18 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                 </TooltipContent>
                             </Tooltip>
                             
-                            <div className="h-px w-10 mx-auto bg-muted/60" />
+                            <div className="h-px w-7 mx-auto bg-muted/60" />
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-14 w-14 rounded-full hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                                        className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary transition-all disabled:opacity-20 disabled:cursor-not-allowed"
                                         onClick={() => navigateQuestion('next')}
                                         disabled={filteredQuestions.findIndex((q: any) => q.id === selectedQuestionId) === filteredQuestions.length - 1}
                                     >
-                                        <ChevronRight className="w-8 h-8" />
+                                        <ChevronRight className="w-5 h-5" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="left" className="font-bold">
