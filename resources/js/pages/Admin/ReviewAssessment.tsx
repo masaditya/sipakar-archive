@@ -32,6 +32,7 @@ function AnswerNotes({ answer }: { answer: any }) {
         router.put(`/admin/answers/${answer.id}/status`, { notes, recommendation }, {
             preserveScroll: true,
             preserveState: true,
+            only: ['aspects'],
             onFinish: () => setIsSaving(false)
         });
     };
@@ -222,6 +223,7 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
         router.put(`/admin/answers/${answerId}/status`, { status: newStatus }, {
             preserveScroll: true,
             preserveState: true,
+            only: ['aspects'],
         });
     };
 
@@ -462,7 +464,7 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                             )}
                         </div>
                     ) : (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div key={selectedQuestion.id} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
                             <Button variant="ghost" onClick={() => setSelectedQuestionId(null)} className="mb-2 text-sm font-bold -ml-3 text-muted-foreground hover:text-foreground h-9 px-3">
                                 <ChevronLeft className="w-4 h-4 mr-1" /> Kembali ke Grid Soal
                             </Button>
@@ -490,7 +492,8 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                                 <span className="text-xs font-black uppercase text-muted-foreground tracking-widest block md:hidden">STATUS REVIEW:</span>
                                                 <div className="flex items-center gap-2 w-full md:w-auto">
                                                     <Select
-                                                        defaultValue={selectedQuestion.answer.status}
+                                                        key={`answer-status-${selectedQuestion.answer.id}`}
+                                                        value={selectedQuestion.answer.status}
                                                         onValueChange={(val) => handleStatusChange(selectedQuestion.answer.id, val)}
                                                     >
                                                         <SelectTrigger className={`w-full md:w-[220px] h-11 text-sm font-bold rounded-xl border-none ring-1 ring-inset shadow-sm ${statusMap[selectedQuestion.answer.status]?.color}`}>
