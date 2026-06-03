@@ -166,13 +166,23 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
     const allQuestions = useMemo(() => {
         return aspects.flatMap((aspect: any) =>
             aspect.sub_aspects.flatMap((sub: any) =>
-                sub.questions.map((q: any) => ({
-                    ...q,
-                    aspect_name: aspect.name,
-                    sub_aspect_name: sub.name,
-                    sub_type: sub.type,
-                    answer: q.answers && q.answers.length > 0 ? q.answers[0] : null
-                }))
+                sub.questions.map((q: any) => {
+                    const rawAnswer = q.answers?.[0] ?? null;
+                    const answer = rawAnswer
+                        ? {
+                            ...rawAnswer,
+                            option: q.options?.find((o: { id: number }) => o.id === rawAnswer.option_id) ?? rawAnswer.option,
+                        }
+                        : null;
+
+                    return {
+                        ...q,
+                        aspect_name: aspect.name,
+                        sub_aspect_name: sub.name,
+                        sub_type: sub.type,
+                        answer,
+                    };
+                })
             )
         );
     }, [aspects]);

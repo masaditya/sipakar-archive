@@ -11,6 +11,8 @@ use App\Models\Answer;
 use App\Models\Organization;
 use App\Models\EvidenceSubmission;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class DashboardController extends Controller
 {
@@ -217,25 +219,45 @@ class DashboardController extends Controller
     {
         $validated = $request->validate([
             'question_id' => 'required|exists:questions,id',
-            'option_id' => 'required|exists:options,id',
-            'files.*' => 'nullable|file',
+            'option_id' => [
+                'required',
+                'integer',
+                Rule::exists('options', 'id')->where('question_id', $request->input('question_id')),
+            ],
+            'next_id' => 'nullable|integer|exists:questions,id',
+            'files.*' => 'nullable|file|max:51200',
         ]);
 
         $user = $request->user();
         $selectedPeriodId = session('selected_period_id');
 
+        if (! $selectedPeriodId) {
+            throw ValidationException::withMessages([
+                'question_id' => ['Periode pengawasan aktif belum dipilih. Muat ulang halaman atau hubungi admin.'],
+            ]);
+        }
+
         $existing = Answer::where('user_id', $user->id)
-                        ->where('question_id', $validated['question_id'])
-                        ->where('period_id', $selectedPeriodId)
-                        ->first();
+            ->where('question_id', $validated['question_id'])
+            ->where('period_id', $selectedPeriodId)
+            ->first();
 
         if ($existing && $existing->status === 'completed') {
-             return redirect()->back()->with('error', 'Soal sudah difinalisasi dan tidak dapat diubah lagi.');
+            throw ValidationException::withMessages([
+                'option_id' => ['Soal sudah difinalisasi dan tidak dapat diubah lagi.'],
+            ]);
         }
 
         $answer = Answer::updateOrCreate(
-            ['user_id' => $user->id, 'question_id' => $validated['question_id'], 'period_id' => $selectedPeriodId],
-            ['option_id' => $validated['option_id'], 'status' => 'submitted']
+            [
+                'user_id' => $user->id,
+                'question_id' => $validated['question_id'],
+                'period_id' => $selectedPeriodId,
+            ],
+            [
+                'option_id' => $validated['option_id'],
+                'status' => 'submitted',
+            ]
         );
 
         if ($request->hasFile('files')) {
@@ -243,16 +265,20 @@ class DashboardController extends Controller
                 $path = $file->store('evidence', 'public');
                 $answer->evidenceSubmissions()->create([
                     'file_path' => $path,
-                    'original_name' => $file->getClientOriginalName()
+                    'original_name' => $file->getClientOriginalName(),
                 ]);
             }
         }
 
-        if ($request->filled('next_id')) {
-            return redirect()->route('questionnaire.detail', $request->input('next_id'))->with('success', 'Jawaban berhasil disimpan, beralih ke soal berikutnya.');
+        if (! empty($validated['next_id'])) {
+            return redirect()
+                ->route('questionnaire.detail', $validated['next_id'])
+                ->with('success', 'Jawaban berhasil disimpan, beralih ke soal berikutnya.');
         }
 
-        return redirect()->route('questionnaire.list')->with('success', 'Jawaban berhasil disimpan. Anda telah di penghujung kuisioner!');
+        return redirect()
+            ->route('questionnaire.detail', $validated['question_id'])
+            ->with('success', 'Jawaban berhasil disimpan.');
     }
 
     public function updateAnswerStatus(Request $request, Answer $answer)

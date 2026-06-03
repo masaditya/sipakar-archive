@@ -4,22 +4,53 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, FileUp, Info, CheckCircle2, Download, ExternalLink, FileText, Scale, Eye, Trash2, MessageSquare, AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { FilePreviewModal } from '@/components/file-preview-modal';
 import { Progress } from '@/components/ui/progress';
 import { renderHelperCalculator } from '@/components/AuditCalculators';
+import { toast } from 'sonner';
+
+function firstFormError(errors: Record<string, string | string[]>): string | null {
+    for (const value of Object.values(errors)) {
+        if (Array.isArray(value)) return value[0] ?? null;
+        if (typeof value === 'string' && value.length > 0) return value;
+    }
+    return null;
+}
 
 export default function QuestionDetail({ question, answer, prevId, nextId, currentIndex, totalCount }: any) {
-    const { data, setData, post, processing, errors, progress } = useForm({
+    const { data, setData, post, processing, errors, progress, reset } = useForm({
         question_id: question.id,
-        option_id: answer?.option_id || '',
+        option_id: answer?.option_id ? String(answer.option_id) : '',
         next_id: nextId || '',
         files: [] as File[],
         _method: 'POST'
     });
 
+    useEffect(() => {
+        const validOptionIds = question.options.map((o: { id: number }) => o.id);
+        const savedOptionId = answer?.option_id ? Number(answer.option_id) : null;
+        const optionBelongsToQuestion = savedOptionId !== null && validOptionIds.includes(savedOptionId);
+
+        reset({
+            question_id: question.id,
+            option_id: optionBelongsToQuestion ? String(savedOptionId) : '',
+            next_id: nextId || '',
+            files: [],
+            _method: 'POST',
+        });
+        setFilesPreview([]);
+        setSubmitError(null);
+    }, [question.id, answer?.id, answer?.option_id, nextId]);
+
     const [filesPreview, setFilesPreview] = useState<{ name: string, url: string }[]>([]);
     const [previewModal, setPreviewModal] = useState({ isOpen: false, url: '', name: '' });
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const validOptionIds = useMemo(
+        () => question.options.map((o: { id: number }) => Number(o.id)),
+        [question.options],
+    );
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -46,14 +77,41 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (isCompleted) return;
+        if (isCompleted || processing) return;
+
+        const optionId = Number(data.option_id);
+        if (!optionId || !validOptionIds.includes(optionId)) {
+            const message = 'Pilih salah satu opsi jawaban untuk soal ini sebelum menyimpan.';
+            setSubmitError(message);
+            toast.error(message);
+            return;
+        }
+
+        setSubmitError(null);
+
         post('/dashboard/submit-answer', {
-            preserveScroll: false,
+            preserveScroll: true,
+            forceFormData: data.files.length > 0,
+            transform: (formData) => ({
+                question_id: question.id,
+                option_id: optionId,
+                ...(nextId ? { next_id: Number(nextId) } : {}),
+                files: formData.files,
+            }),
             onSuccess: () => {
                 setFilesPreview([]);
                 setData('files', []);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+                setSubmitError(null);
+            },
+            onError: (serverErrors) => {
+                const message = firstFormError(serverErrors)
+                    ?? 'Gagal menyimpan jawaban. Periksa isian Anda dan coba lagi.';
+                setSubmitError(message);
+                toast.error(message);
+            },
+            onCancel: () => {
+                toast.error('Penyimpanan dibatalkan.');
+            },
         });
     };
 
@@ -265,6 +323,22 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                                             </div>
                                         )}
                                     </div>
+                                    {(submitError || errors.option_id || errors.question_id || errors.files) && (
+                                        <div
+                                            role="alert"
+                                            className="flex items-start gap-3 p-4 rounded-2xl border-2 border-destructive/30 bg-destructive/5 text-destructive"
+                                        >
+                                            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                                            <div className="space-y-1 text-sm font-bold">
+                                                <p>{submitError ?? firstFormError(errors as Record<string, string | string[]>) ?? 'Gagal menyimpan jawaban.'}</p>
+                                                {errors.files && (
+                                                    <p className="text-xs font-medium opacity-90">
+                                                        {Array.isArray(errors.files) ? errors.files.join(', ') : errors.files}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4">
@@ -278,11 +352,21 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                                         </div>
                                     )}
                                     <Button
+                                        type="submit"
                                         className="w-full py-8 rounded-3xl text-sm font-black tracking-[0.3em] uppercase shadow-[0_15px_40px_-10px_rgba(var(--primary),.4)] hover:shadow-[0_20px_50px_-10px_rgba(var(--primary),.5)] transition-all active:scale-95 disabled:opacity-50"
                                         disabled={processing || isCompleted}
                                     >
-                                        {isCompleted ? 'SUDAH DIFINALISASI' : (processing ? 'MENGIRIM DATA...' : 'SIMPAN SEMUA DATA')}
+                                        {isCompleted
+                                            ? 'SUDAH DIFINALISASI'
+                                            : processing
+                                                ? 'MENYIMPAN...'
+                                                : 'SIMPAN SEMUA DATA'}
                                     </Button>
+                                    {processing && (
+                                        <p className="text-center text-xs font-bold text-muted-foreground">
+                                            Mohon tunggu hingga proses selesai...
+                                        </p>
+                                    )}
                                 </div>
                             </form>
                         </div>
