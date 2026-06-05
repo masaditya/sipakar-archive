@@ -455,9 +455,15 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                                                     className="p-5 rounded-3xl border-2 border-dashed border-primary/30 bg-primary/10 flex items-center justify-between group hover:border-primary/60 hover:bg-primary/20 transition-all cursor-pointer shadow-sm"
                                                 >
                                                     <div className="flex items-center gap-4 min-w-0 flex-1">
-                                                        <div className="p-3 rounded-2xl bg-white text-primary shadow-sm group-hover:scale-110 transition-transform shrink-0">
+                                                        <a
+                                                            href={`/storage/${ef.path}`}
+                                                            download={ef.name}
+                                                            onClick={e => e.stopPropagation()}
+                                                            title="Unduh file"
+                                                            className="p-3 rounded-2xl bg-white text-primary shadow-sm hover:bg-primary/5 group-hover:scale-110 transition-transform shrink-0"
+                                                        >
                                                             <Download className="w-5 h-5" />
-                                                        </div>
+                                                        </a>
                                                         <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                                                             <span className="text-sm font-black text-primary tracking-widest uppercase truncate">{ef.name}</span>
                                                             <span className="text-xs text-primary/70 font-black uppercase tracking-widest">{(ef.size / 1024 / 1024).toFixed(2)} MB</span>
