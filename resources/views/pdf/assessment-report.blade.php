@@ -130,7 +130,11 @@
             <th class="blue thin center">(8)=(6)×(7)</th>
         </tr>
 
-        @php $total_skor_up = 0; $up_index = 0; @endphp
+        @php
+            $total_skor_up = 0;
+            $up_index = 0;
+            $scoreCalculator = app(\App\Services\AssessmentScoreCalculator::class);
+        @endphp
         @foreach ($aspects as $aspect_up)
             @php
                 $upSubAspects = $aspect_up->subAspects->where('type', 'UP');
@@ -138,33 +142,16 @@
                 $up_index++;
 
                 $allQuestions = $upSubAspects->flatMap->questions;
-                $nilaiStandar = $allQuestions->count() * 100;
-                
-                $nilai = 0;
-                foreach($allQuestions as $q) {
-                    $ans = $q->answers->first();
-                    if ($ans && $ans->status === 'completed' && $ans->option) {
-                        $nilai += $ans->option->score;
-                    }
-                }
+                $nilaiStandar = $scoreCalculator->nilaiStandar($allQuestions);
+                $nilai = $scoreCalculator->totalNilai($allQuestions, true);
 
                 $bobotAspek = $aspect_up->score_weight;
                 $subSkorSum = 0;
 
                 foreach ($upSubAspects as $sub) {
                     $subQuestions = $sub->questions;
-                    $subNilaiStandar = $subQuestions->count() * 100;
-                    
-                    $subNilai = 0;
-                    foreach($subQuestions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
-                            $subNilai += $ans->option->score;
-                        }
-                    }
-
                     $subBobot = $sub->score_weight ?? 0;
-                    $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * $subBobot : 0;
+                    $subSkor = $scoreCalculator->subAspectSkor($subQuestions, $subBobot, true);
                     $subSkorSum += $subSkor;
                 }
 
@@ -188,16 +175,8 @@
             @foreach ($upSubAspects as $subAspect)
                 @php
                     $subQuestions = $subAspect->questions;
-                    $subNilaiStandar = $subQuestions->count() * 100;
-                    
-                    $subNilai = 0;
-                    foreach($subQuestions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
-                            $subNilai += $ans->option->score;
-                        }
-                    }
-
+                    $subNilaiStandar = $scoreCalculator->nilaiStandar($subQuestions);
+                    $subNilai = $scoreCalculator->totalNilai($subQuestions, true);
                     $subBobot = $subAspect->score_weight;
                     $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * ($subBobot / 100) * 100 : 0;
                 @endphp
@@ -257,33 +236,16 @@
                 $uk_index++;
 
                 $allQuestions = $ukSubAspects->flatMap->questions;
-                $nilaiStandar = $allQuestions->count() * 100;
-                
-                $nilai = 0;
-                foreach($allQuestions as $q) {
-                    $ans = $q->answers->first();
-                    if ($ans && $ans->status === 'completed' && $ans->option) {
-                        $nilai += $ans->option->score;
-                    }
-                }
+                $nilaiStandar = $scoreCalculator->nilaiStandar($allQuestions);
+                $nilai = $scoreCalculator->totalNilai($allQuestions, true);
 
                 $bobotAspek = $aspect_uk->score_weight;
                 $subSkorSum = 0;
 
                 foreach ($ukSubAspects as $sub) {
                     $subQuestions = $sub->questions;
-                    $subNilaiStandar = $subQuestions->count() * 100;
-                    
-                    $subNilai = 0;
-                    foreach($subQuestions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
-                            $subNilai += $ans->option->score;
-                        }
-                    }
-
                     $subBobot = $sub->score_weight ?? 0;
-                    $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * $subBobot : 0;
+                    $subSkor = $scoreCalculator->subAspectSkor($subQuestions, $subBobot, true);
                     $subSkorSum += $subSkor;
                 }
 
@@ -307,16 +269,8 @@
             @foreach ($ukSubAspects as $subAspect)
                 @php
                     $subQuestions = $subAspect->questions;
-                    $subNilaiStandar = $subQuestions->count() * 100;
-                    
-                    $subNilai = 0;
-                    foreach($subQuestions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
-                            $subNilai += $ans->option->score;
-                        }
-                    }
-
+                    $subNilaiStandar = $scoreCalculator->nilaiStandar($subQuestions);
+                    $subNilai = $scoreCalculator->totalNilai($subQuestions, true);
                     $subBobot = $subAspect->score_weight;
                     $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * ($subBobot / 100) * 100 : 0;
                 @endphp

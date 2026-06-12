@@ -10,6 +10,13 @@ import { Progress } from '@/components/ui/progress';
 import { renderHelperCalculator } from '@/components/AuditCalculators';
 import { toast } from 'sonner';
 
+type PendingUploadFile = {
+    id: string;
+    file: File;
+    name: string;
+    url: string;
+};
+
 function firstFormError(errors: Record<string, string | string[]>): string | null {
     for (const value of Object.values(errors)) {
         if (Array.isArray(value)) return value[0] ?? null;
@@ -19,48 +26,78 @@ function firstFormError(errors: Record<string, string | string[]>): string | nul
 }
 
 export default function QuestionDetail({ question, answer, prevId, nextId, currentIndex, totalCount }: any) {
-    const { data, setData, post, processing, errors, progress, reset } = useForm({
-        question_id: question.id,
-        option_id: answer?.option_id ? String(answer.option_id) : '',
-        next_id: nextId || '',
-        files: [] as File[],
-        _method: 'POST'
-    });
-
-    useEffect(() => {
-        const validOptionIds = question.options.map((o: { id: number }) => o.id);
-        const savedOptionId = answer?.option_id ? Number(answer.option_id) : null;
-        const optionBelongsToQuestion = savedOptionId !== null && validOptionIds.includes(savedOptionId);
-
-        reset({
-            question_id: question.id,
-            option_id: optionBelongsToQuestion ? String(savedOptionId) : '',
-            next_id: nextId || '',
-            files: [],
-            _method: 'POST',
-        });
-        setFilesPreview([]);
-        setSubmitError(null);
-    }, [question.id, answer?.id, answer?.option_id, nextId]);
-
-    const [filesPreview, setFilesPreview] = useState<{ name: string, url: string }[]>([]);
-    const [previewModal, setPreviewModal] = useState({ isOpen: false, url: '', name: '' });
-    const [submitError, setSubmitError] = useState<string | null>(null);
-
     const validOptionIds = useMemo(
         () => question.options.map((o: { id: number }) => Number(o.id)),
         [question.options],
     );
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const filesArray = Array.from(e.target.files);
-            setData('files', filesArray);
-            setFilesPreview(filesArray.map(f => ({
-                name: f.name,
-                url: URL.createObjectURL(f)
-            })));
+    const initialOptionId = useMemo(() => {
+        const savedOptionId = answer?.option_id ? Number(answer.option_id) : null;
+        if (savedOptionId !== null && validOptionIds.includes(savedOptionId)) {
+            return String(savedOptionId);
         }
+        return '';
+    }, [answer?.option_id, validOptionIds]);
+
+    const { data, setData, post, processing, errors, progress, transform, clearErrors } = useForm({
+        option_id: initialOptionId,
+        files: [] as File[],
+    });
+
+    // Selalu injeksikan question_id & next_id dari props saat submit (bukan dari state form).
+    transform((formData) => ({
+        question_id: question.id,
+        option_id: Number(formData.option_id),
+        ...(nextId ? { next_id: Number(nextId) } : {}),
+        files: formData.files,
+    }));
+
+    useEffect(() => {
+        setData({
+            option_id: initialOptionId,
+            files: [],
+        });
+        clearErrors();
+        setPendingFiles((prev) => {
+            prev.forEach((f) => URL.revokeObjectURL(f.url));
+            return [];
+        });
+        setSubmitError(null);
+    }, [question.id, initialOptionId, nextId]);
+
+    const [pendingFiles, setPendingFiles] = useState<PendingUploadFile[]>([]);
+    const [previewModal, setPreviewModal] = useState({ isOpen: false, url: '', name: '' });
+    const [submitError, setSubmitError] = useState<string | null>(null);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.length) return;
+
+        const newFiles = Array.from(e.target.files);
+        const added: PendingUploadFile[] = newFiles.map((file) => ({
+            id: crypto.randomUUID(),
+            file,
+            name: file.name,
+            url: URL.createObjectURL(file),
+        }));
+
+        setPendingFiles((prev) => {
+            const next = [...prev, ...added];
+            setData('files', next.map((f) => f.file));
+            return next;
+        });
+
+        e.target.value = '';
+    };
+
+    const removePendingFile = (id: string, e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        setPendingFiles((prev) => {
+            const target = prev.find((f) => f.id === id);
+            if (target) URL.revokeObjectURL(target.url);
+            const next = prev.filter((f) => f.id !== id);
+            setData('files', next.map((f) => f.file));
+            return next;
+        });
     };
 
     const openPreview = (url: string, name: string) => {
@@ -92,14 +129,11 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
         post('/dashboard/submit-answer', {
             preserveScroll: true,
             forceFormData: data.files.length > 0,
-            transform: (formData) => ({
-                question_id: question.id,
-                option_id: optionId,
-                ...(nextId ? { next_id: Number(nextId) } : {}),
-                files: formData.files,
-            }),
             onSuccess: () => {
-                setFilesPreview([]);
+                setPendingFiles((prev) => {
+                    prev.forEach((f) => URL.revokeObjectURL(f.url));
+                    return [];
+                });
                 setData('files', []);
                 setSubmitError(null);
             },
@@ -170,6 +204,11 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                             <Badge variant="secondary" className="px-2 py-0 font-bold text-xs uppercase tracking-wider">
                                 {question.sub_aspect.name}
                             </Badge>
+                            {question.scoring_mode === 'optional' && (
+                                <Badge variant="outline" className="px-1.5 py-0 text-[9px] font-black uppercase tracking-widest bg-violet-500/10 text-violet-700 border-violet-300/60">
+                                    Opsional
+                                </Badge>
+                            )}
                             {answer && (
                                 <>
                                     <Badge variant="outline" className={`px-2 py-0 font-bold text-xs uppercase tracking-widest ${statusMap[answer.status]?.color}`}>
@@ -189,7 +228,7 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                     <div className="grid grid-cols-1 lg:grid-cols-10 gap-10 items-start">
                         {/* LEFT COLUMN: Question Content & Form */}
                         <div className="space-y-10 col-span-4">
-                            <form onSubmit={submit} className="space-y-10">
+                            <form key={question.id} onSubmit={submit} className="space-y-10">
                                 <div className="space-y-6">
                                     <div className="flex flex-col gap-1">
                                         <Label className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Pilih Opsi Jawaban</Label>
@@ -295,7 +334,7 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                                                 </div>
                                                 <div className="mt-5 flex flex-col gap-1">
                                                     <span className="text-sm font-bold text-foreground">Pilih file pendukung</span>
-                                                    <span className="text-xs uppercase font-bold tracking-widest text-muted-foreground/50">Klik atau Geser ke sini (Multiple files ok)</span>
+                                                    <span className="text-xs uppercase font-bold tracking-widest text-muted-foreground/50">Klik untuk menambah file (bisa berkali-kali)</span>
                                                 </div>
                                             </div>
                                         ) : (
@@ -305,25 +344,36 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
                                             </div>
                                         )}
 
-                                        {filesPreview.length > 0 && (
+                                        {pendingFiles.length > 0 && (
                                             <div className="flex flex-col gap-2 p-4 bg-primary/2 border border-primary/10 rounded-2xl animate-in fade-in slide-in-from-top-2 duration-300">
-                                                <span className="text-xs font-black uppercase tracking-widest text-primary/60 pl-1 mb-1">FILE SIAP DIUPLOAD:</span>
+                                                <span className="text-xs font-black uppercase tracking-widest text-primary/60 pl-1 mb-1">
+                                                    FILE SIAP DIUPLOAD ({pendingFiles.length})
+                                                </span>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {filesPreview.map((file, i) => (
+                                                    {pendingFiles.map((file) => (
                                                         <div
-                                                            key={i}
+                                                            key={file.id}
                                                             onClick={() => openPreview(file.url, file.name)}
-                                                            className="flex items-center gap-2 px-3 py-2 bg-background border border-primary/20 rounded-xl text-sm font-bold text-foreground shadow-sm hover:border-primary transition-colors cursor-pointer group"
+                                                            className="flex items-center gap-2 px-3 py-2 bg-background border border-primary/20 rounded-xl text-sm font-bold text-foreground shadow-sm hover:border-primary transition-colors cursor-pointer group max-w-full"
                                                         >
-                                                            <FileText className="w-3.5 h-3.5 text-primary" /> {file.name}
-                                                            <Eye className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity ml-1" />
+                                                            <FileText className="w-3.5 h-3.5 text-primary shrink-0" />
+                                                            <span className="truncate max-w-[180px] sm:max-w-[240px]">{file.name}</span>
+                                                            <Eye className="w-3 h-3 opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />
+                                                            <button
+                                                                type="button"
+                                                                onClick={(e) => removePendingFile(file.id, e)}
+                                                                className="p-1 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                                                                title="Hapus dari daftar upload"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
                                     </div>
-                                    {(submitError || errors.option_id || errors.question_id || errors.files) && (
+                                    {(submitError || errors.option_id || errors.files) && (
                                         <div
                                             role="alert"
                                             className="flex items-start gap-3 p-4 rounded-2xl border-2 border-destructive/30 bg-destructive/5 text-destructive"

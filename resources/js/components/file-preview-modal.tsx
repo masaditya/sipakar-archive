@@ -115,9 +115,16 @@ function XlsxPreview({ url }: { url: string }) {
 export function FilePreviewModal({ isOpen, onClose, fileUrl, fileName }: FilePreviewModalProps) {
     if (!fileUrl) return null;
 
-    const getFileType = (url: string) => {
-        const urlWithoutQuery = url.split("?")[0];
-        const ext = urlWithoutQuery.split(".").pop()?.toLowerCase();
+    const getExtension = (value: string) => {
+        const clean = value.split("?")[0];
+        const parts = clean.split(".");
+        return parts.length > 1 ? parts.pop()?.toLowerCase() : undefined;
+    };
+
+    const getFileType = (url: string, name?: string) => {
+        const ext = (name ? getExtension(name) : undefined)
+            ?? (url.startsWith("blob:") ? undefined : getExtension(url));
+
         if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext || "")) return "image";
         if (["mp4", "webm", "ogg", "mov"].includes(ext || "")) return "video";
         if (ext === "pdf") return "pdf";
@@ -126,7 +133,7 @@ export function FilePreviewModal({ isOpen, onClose, fileUrl, fileName }: FilePre
         return "other";
     };
 
-    const fileType = getFileType(fileUrl);
+    const fileType = getFileType(fileUrl, fileName);
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

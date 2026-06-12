@@ -10,6 +10,7 @@ use App\Models\Question;
 use App\Models\Organization;
 use App\Models\Period;
 use Illuminate\Support\Facades\Hash;
+use App\Services\AssessmentScoreCalculator;
 use Illuminate\Validation\Rule;
 
 class AdminCMSController extends Controller
@@ -244,11 +245,13 @@ class AdminCMSController extends Controller
             'instructions' => 'nullable|string',
             'legal_basis' => 'nullable|string',
             'helper' => 'nullable|string',
+            'scoring_mode' => 'required|in:required,optional',
             'example_files' => 'nullable|array',
             'example_files.*' => 'nullable|file',
             'options' => 'required|array|min:5',
             'options.*.score' => 'required|numeric',
-            'options.*.text' => 'required|string'
+            'options.*.text' => 'required|string',
+            'options.*.excludes_from_scoring' => 'nullable|boolean',
         ]);
 
         $paths = [];
@@ -269,11 +272,16 @@ class AdminCMSController extends Controller
             'instructions' => $validated['instructions'],
             'legal_basis' => $validated['legal_basis'],
             'helper' => $request->helper,
-            'example_file_paths' => $paths
+            'scoring_mode' => $validated['scoring_mode'],
+            'example_file_paths' => $paths,
         ]);
-        
-        foreach($validated['options'] as $opt) {
-            $q->options()->create($opt);
+
+        foreach ($validated['options'] as $opt) {
+            $q->options()->create([
+                'score' => $opt['score'],
+                'text' => $opt['text'],
+                'excludes_from_scoring' => filter_var($opt['excludes_from_scoring'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            ]);
         }
 
         return redirect('/dashboard')->with('success', 'Question created successfully.');
@@ -285,13 +293,15 @@ class AdminCMSController extends Controller
             'instructions' => 'nullable|string',
             'legal_basis' => 'nullable|string',
             'helper' => 'nullable|string',
+            'scoring_mode' => 'required|in:required,optional',
             'example_files' => 'nullable|array',
             'example_files.*' => 'nullable|file',
             'existing_example_files' => 'nullable|array',
             'options' => 'required|array|min:5',
             'options.*.id' => 'nullable|exists:options,id',
             'options.*.score' => 'required|numeric',
-            'options.*.text' => 'required|string'
+            'options.*.text' => 'required|string',
+            'options.*.excludes_from_scoring' => 'nullable|boolean',
         ]);
 
         $paths = $request->input('existing_example_files', []);
@@ -312,24 +322,25 @@ class AdminCMSController extends Controller
             'instructions' => $validated['instructions'],
             'legal_basis' => $validated['legal_basis'],
             'helper' => $request->helper,
-            'example_file_paths' => $paths
+            'scoring_mode' => $validated['scoring_mode'],
+            'example_file_paths' => $paths,
         ]);
 
         // Update options
         $existingOptionIds = collect($validated['options'])->pluck('id')->filter()->toArray();
         $question->options()->whereNotIn('id', $existingOptionIds)->delete();
 
-        foreach($validated['options'] as $opt) {
+        foreach ($validated['options'] as $opt) {
+            $optionPayload = [
+                'score' => $opt['score'],
+                'text' => $opt['text'],
+                'excludes_from_scoring' => filter_var($opt['excludes_from_scoring'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            ];
+
             if (isset($opt['id'])) {
-                $question->options()->where('id', $opt['id'])->update([
-                    'score' => $opt['score'],
-                    'text' => $opt['text']
-                ]);
+                $question->options()->where('id', $opt['id'])->update($optionPayload);
             } else {
-                $question->options()->create([
-                    'score' => $opt['score'],
-                    'text' => $opt['text']
-                ]);
+                $question->options()->create($optionPayload);
             }
         }
 
@@ -361,54 +372,9 @@ class AdminCMSController extends Controller
             $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId)->with('option');
         }])->get();
 
-        $total_skor_up = 0;
-        $total_skor_uk = 0;
-
-        foreach ($aspects as $aspect) {
-            // UP Compute
-            $upSubAspects = $aspect->subAspects->where('type', 'UP');
-            if ($upSubAspects->isNotEmpty()) {
-                $bobotAspek = $aspect->score_weight;
-                $subSkorSum = 0;
-                foreach ($upSubAspects as $sub) {
-                    $subQuestions = $sub->questions;
-                    $subNilaiStandar = $subQuestions->count() * 100;
-                    $subNilai = 0;
-                    foreach($subQuestions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
-                            $subNilai += $ans->option->score;
-                        }
-                    }
-                    $subBobot = $sub->score_weight ?? 0;
-                    $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * $subBobot : 0;
-                    $subSkorSum += $subSkor;
-                }
-                $total_skor_up += $subSkorSum * ($bobotAspek / 100);
-            }
-
-            // UK Compute
-            $ukSubAspects = $aspect->subAspects->where('type', 'UK');
-            if ($ukSubAspects->isNotEmpty()) {
-                $bobotAspek = $aspect->score_weight;
-                $subSkorSum = 0;
-                foreach ($ukSubAspects as $sub) {
-                    $subQuestions = $sub->questions;
-                    $subNilaiStandar = $subQuestions->count() * 100;
-                    $subNilai = 0;
-                    foreach($subQuestions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
-                            $subNilai += $ans->option->score;
-                        }
-                    }
-                    $subBobot = $sub->score_weight ?? 0;
-                    $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * $subBobot : 0;
-                    $subSkorSum += $subSkor;
-                }
-                $total_skor_uk += $subSkorSum * ($bobotAspek / 100);
-            }
-        }
+        $totals = app(AssessmentScoreCalculator::class)->computeTotals($aspects, completedOnly: true);
+        $total_skor_up = $totals['up'];
+        $total_skor_uk = $totals['uk'];
 
         $nilai_akhir = ($total_skor_up + $total_skor_uk) / 2;
         $formatted_nilai = number_format(round($nilai_akhir, 2), 2, '.', '');

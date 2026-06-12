@@ -10,6 +10,7 @@ use App\Models\Question;
 use App\Models\Answer;
 use App\Models\Organization;
 use App\Models\EvidenceSubmission;
+use App\Services\AssessmentScoreCalculator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -106,60 +107,13 @@ class DashboardController extends Controller
 
     private function calculateWeightedScore($user, $periodId)
     {
-        $aspects = Aspect::where('period_id', $periodId)->with(['subAspects.questions.answers' => function($q) use ($user, $periodId) {
+        $aspects = Aspect::where('period_id', $periodId)->with(['subAspects.questions.answers' => function ($q) use ($user, $periodId) {
             $q->where('user_id', $user->id)->where('period_id', $periodId)->with('option');
         }])->get();
 
-        $total_skor_up = 0;
-        $total_skor_uk = 0;
+        $totals = app(AssessmentScoreCalculator::class)->computeTotals($aspects);
 
-        foreach ($aspects as $aspect) {
-            $bobotAspek = $aspect->score_weight;
-            
-            // UP Compute
-            $upSubAspects = $aspect->subAspects->where('type', 'UP');
-            if ($upSubAspects->isNotEmpty()) {
-                $subSkorSum = 0;
-                foreach ($upSubAspects as $sub) {
-                    $questions = $sub->questions;
-                    $nilaiStandar = $questions->count() * 100;
-                    $totalNilai = 0;
-                    foreach ($questions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->option) {
-                            $totalNilai += $ans->option->score;
-                        }
-                    }
-                    $subBobot = $sub->score_weight ?? 0;
-                    $subSkor = $nilaiStandar > 0 ? ($totalNilai / $nilaiStandar) * $subBobot : 0;
-                    $subSkorSum += $subSkor;
-                }
-                $total_skor_up += $subSkorSum * ($bobotAspek / 100);
-            }
-
-            // UK Compute
-            $ukSubAspects = $aspect->subAspects->where('type', 'UK');
-            if ($ukSubAspects->isNotEmpty()) {
-                $subSkorSum = 0;
-                foreach ($ukSubAspects as $sub) {
-                    $questions = $sub->questions;
-                    $nilaiStandar = $questions->count() * 100;
-                    $totalNilai = 0;
-                    foreach ($questions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->option) {
-                            $totalNilai += $ans->option->score;
-                        }
-                    }
-                    $subBobot = $sub->score_weight ?? 0;
-                    $subSkor = $nilaiStandar > 0 ? ($totalNilai / $nilaiStandar) * $subBobot : 0;
-                    $subSkorSum += $subSkor;
-                }
-                $total_skor_uk += $subSkorSum * ($bobotAspek / 100);
-            }
-        }
-
-        return ($total_skor_up + $total_skor_uk) / 2;
+        return ($totals['up'] + $totals['uk']) / 2;
     }
 
     public function questionnaireList(Request $request)
@@ -335,54 +289,9 @@ class DashboardController extends Controller
             $q->where('user_id', $user->id)->where('period_id', $selectedPeriodId)->with('option');
         }])->get();
 
-        $total_skor_up = 0;
-        $total_skor_uk = 0;
-
-        foreach ($aspects as $aspect) {
-            // UP Compute
-            $upSubAspects = $aspect->subAspects->where('type', 'UP');
-            if ($upSubAspects->isNotEmpty()) {
-                $bobotAspek = $aspect->score_weight;
-                $subSkorSum = 0;
-                foreach ($upSubAspects as $sub) {
-                    $subQuestions = $sub->questions;
-                    $subNilaiStandar = $subQuestions->count() * 100;
-                    $subNilai = 0;
-                    foreach($subQuestions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
-                            $subNilai += $ans->option->score;
-                        }
-                    }
-                    $subBobot = $sub->score_weight ?? 0;
-                    $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * $subBobot : 0;
-                    $subSkorSum += $subSkor;
-                }
-                $total_skor_up += $subSkorSum * ($bobotAspek / 100);
-            }
-
-            // UK Compute
-            $ukSubAspects = $aspect->subAspects->where('type', 'UK');
-            if ($ukSubAspects->isNotEmpty()) {
-                $bobotAspek = $aspect->score_weight;
-                $subSkorSum = 0;
-                foreach ($ukSubAspects as $sub) {
-                    $subQuestions = $sub->questions;
-                    $subNilaiStandar = $subQuestions->count() * 100;
-                    $subNilai = 0;
-                    foreach($subQuestions as $q) {
-                        $ans = $q->answers->first();
-                        if ($ans && $ans->status === 'completed' && $ans->option) {
-                            $subNilai += $ans->option->score;
-                        }
-                    }
-                    $subBobot = $sub->score_weight ?? 0;
-                    $subSkor = $subNilaiStandar > 0 ? ($subNilai / $subNilaiStandar) * $subBobot : 0;
-                    $subSkorSum += $subSkor;
-                }
-                $total_skor_uk += $subSkorSum * ($bobotAspek / 100);
-            }
-        }
+        $totals = app(AssessmentScoreCalculator::class)->computeTotals($aspects, completedOnly: true);
+        $total_skor_up = $totals['up'];
+        $total_skor_uk = $totals['uk'];
 
         $nilai_akhir = ($total_skor_up + $total_skor_uk) / 2;
         $formatted_nilai = number_format(round($nilai_akhir, 2), 2, '.', '');

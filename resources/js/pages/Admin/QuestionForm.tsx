@@ -1,5 +1,6 @@
 import { Head, useForm, Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
@@ -15,7 +16,8 @@ import {
     HelpCircle, 
     CheckCircle2, 
     Plus,
-    FileCheck
+    FileCheck,
+    Scale
 } from 'lucide-react';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
@@ -72,34 +74,44 @@ function RichTextEditor({ value, onChange, placeholder }: { value: string, onCha
 export default function QuestionForm({ question, sub_aspect_id }: any) {
     const isEditing = !!question;
 
+    const defaultOptions = [
+        { score: 0, text: 'Tidak sesuai', excludes_from_scoring: false },
+        { score: 20, text: 'Kurang sesuai', excludes_from_scoring: false },
+        { score: 50, text: 'Sesuai sebagian', excludes_from_scoring: false },
+        { score: 70, text: 'Sesuai sebagian besar', excludes_from_scoring: false },
+        { score: 100, text: 'Sesuai 100%', excludes_from_scoring: false },
+    ];
+
     const { data, setData, post, processing, errors, progress } = useForm({
         _method: isEditing ? 'PUT' : 'POST',
         sub_aspect_id: sub_aspect_id || question?.sub_aspect_id || '',
         text: question?.text || '',
         instructions: question?.instructions || '',
         legal_basis: question?.legal_basis || '',
+        scoring_mode: question?.scoring_mode || 'required',
         example_files: [] as File[],
         existing_example_files: question?.example_file_paths || [],
-        options: question?.options?.length ? question.options : [
-            { score: 0, text: 'Tidak sesuai' },
-            { score: 20, text: 'Kurang sesuai' },
-            { score: 50, text: 'Sesuai sebagian' },
-            { score: 70, text: 'Sesuai sebagian besar' },
-            { score: 100, text: 'Sesuai 100%' },
-        ]
+        options: question?.options?.length
+            ? question.options.map((opt: any) => ({
+                id: opt.id,
+                score: opt.score,
+                text: opt.text,
+                excludes_from_scoring: !!opt.excludes_from_scoring,
+            }))
+            : defaultOptions,
     });
 
     const [previewModal, setPreviewModal] = useState({ isOpen: false, url: '', name: '' });
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleOptionChange = (index: number, field: string, value: string | number) => {
+    const handleOptionChange = (index: number, field: string, value: string | number | boolean) => {
         const newOptions = [...data.options];
         newOptions[index] = { ...newOptions[index], [field]: value };
         setData('options', newOptions);
     };
 
     const addOption = () => {
-        setData('options', [...data.options, { score: 0, text: '' }]);
+        setData('options', [...data.options, { score: 0, text: '', excludes_from_scoring: false }]);
     };
 
     const removeOption = (index: number) => {
@@ -196,6 +208,53 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
                             </div>
                         </CardWrapper>
 
+                        <CardWrapper title="Mode Penilaian" icon={<Scale className="size-5" />}>
+                            <div className="space-y-6">
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('scoring_mode', 'required')}
+                                        className={`p-5 rounded-2xl border-2 text-left transition-all ${
+                                            data.scoring_mode === 'required'
+                                                ? 'border-primary bg-primary/5 shadow-lg'
+                                                : 'border-muted hover:border-primary/30'
+                                        }`}
+                                    >
+                                        <p className="font-black text-sm uppercase tracking-widest">Wajib</p>
+                                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                                            Soal selalu dihitung dalam penilaian, meskipun belum dijawab.
+                                        </p>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setData('scoring_mode', 'optional')}
+                                        className={`p-5 rounded-2xl border-2 text-left transition-all ${
+                                            data.scoring_mode === 'optional'
+                                                ? 'border-primary bg-primary/5 shadow-lg'
+                                                : 'border-muted hover:border-primary/30'
+                                        }`}
+                                    >
+                                        <p className="font-black text-sm uppercase tracking-widest">Opsional</p>
+                                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                                            Soal tidak dihitung jika belum dijawab atau opsi &quot;keluar penilaian&quot; dipilih.
+                                        </p>
+                                    </button>
+                                </div>
+                                {errors.scoring_mode && (
+                                    <p className="text-xs text-destructive font-bold px-1">{errors.scoring_mode}</p>
+                                )}
+                                {data.scoring_mode === 'optional' && (
+                                    <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl flex gap-3">
+                                        <Info className="size-4 text-amber-600 shrink-0 mt-0.5" />
+                                        <p className="text-[11px] font-medium text-amber-800 dark:text-amber-200 leading-relaxed">
+                                            Centang &quot;Keluarkan dari penilaian&quot; pada opsi yang membuat soal diabaikan
+                                            (misalnya jawaban N/A atau skor 0 untuk Arsip Vital).
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </CardWrapper>
+
                         {/* Options Section */}
                         <div className="space-y-4">
                             <div className="flex justify-between items-center px-1">
@@ -225,15 +284,30 @@ export default function QuestionForm({ question, sub_aspect_id }: any) {
                                                 />
                                             </div>
                                         </div>
-                                        <div className="flex-1">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 mb-2 block">Teks Jawaban</Label>
-                                            <Input 
-                                                required 
-                                                value={opt.text} 
-                                                onChange={e => handleOptionChange(index, 'text', e.target.value)}
-                                                className="h-11 rounded-xl font-bold"
-                                                placeholder="Deskripsi pilihan jawaban..."
-                                            />
+                                        <div className="flex-1 space-y-3">
+                                            <div>
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 mb-2 block">Teks Jawaban</Label>
+                                                <Input 
+                                                    required 
+                                                    value={opt.text} 
+                                                    onChange={e => handleOptionChange(index, 'text', e.target.value)}
+                                                    className="h-11 rounded-xl font-bold"
+                                                    placeholder="Deskripsi pilihan jawaban..."
+                                                />
+                                            </div>
+                                            {data.scoring_mode === 'optional' && (
+                                                <label className="flex items-center gap-2.5 cursor-pointer">
+                                                    <Checkbox
+                                                        checked={!!opt.excludes_from_scoring}
+                                                        onCheckedChange={checked =>
+                                                            handleOptionChange(index, 'excludes_from_scoring', checked === true)
+                                                        }
+                                                    />
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                                        Keluarkan dari penilaian
+                                                    </span>
+                                                </label>
+                                            )}
                                         </div>
                                         {data.options.length > 2 && (
                                             <Button type="button" variant="ghost" size="icon" className="h-10 w-10 mt-6 rounded-xl text-destructive hover:bg-destructive/10" onClick={() => removeOption(index)}>

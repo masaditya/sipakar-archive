@@ -211,7 +211,14 @@ export default function CentralManagement({ aspects }: any) {
                                                                                     {i + 1}
                                                                                 </div>
                                                                                 <div className="flex-1 space-y-3">
-                                                                                    <p className="font-bold text-sm leading-relaxed text-foreground/90">{q.text}</p>
+                                                                                    <div className="flex flex-wrap items-center gap-2">
+                                                                                        <p className="font-bold text-sm leading-relaxed text-foreground/90">{q.text}</p>
+                                                                                        {q.scoring_mode === 'optional' && (
+                                                                                            <span className="inline-flex items-center px-2 py-0.5 text-[9px] font-black tracking-widest rounded-md bg-violet-100 text-violet-700 border border-violet-200 uppercase w-fit shrink-0">
+                                                                                                Opsional
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
                                                                                     {/* {q.instructions && (
                                                                                         <div className="flex items-start gap-2 bg-muted/50 p-3 rounded-xl border-l-4 border-primary">
                                                                                             <HelpCircle className="size-4 text-primary shrink-0 mt-0.5" />
