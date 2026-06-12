@@ -245,8 +245,8 @@ export const renderHelperCalculator = (calculator: string | null | undefined) =>
         case AuditCalculator.TRANSFER_TO_ARCHIVE_UNIT:
             return (
                 <PercentageCalculator
-                    numeratorLabel="JUMLAH UNIT PENGOLAH YANG TERDAPAT PADA PERANGKAT DAERAH"
-                    denominatorLabel="JUMLAH UNIT PENGOLAH YANG TELAH MEMINDAAHKAN ARSIP INAKTIFNYA KE UNIT KEARSIPAN"
+                    numeratorLabel="JUMLAH UNIT PENGOLAH YANG TELAH MEMINDAAHKAN ARSIP INAKTIFNYA KE UNIT KEARSIPAN"
+                    denominatorLabel="JUMLAH UNIT PENGOLAH YANG TERDAPAT PADA PERANGKAT DAERAH"
                 />
             );
         default:
