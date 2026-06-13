@@ -17,6 +17,13 @@ type PendingUploadFile = {
     url: string;
 };
 
+function createTempId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 function firstFormError(errors: Record<string, string | string[]>): string | null {
     for (const value of Object.values(errors)) {
         if (Array.isArray(value)) return value[0] ?? null;
@@ -74,7 +81,7 @@ export default function QuestionDetail({ question, answer, prevId, nextId, curre
 
         const newFiles = Array.from(e.target.files);
         const added: PendingUploadFile[] = newFiles.map((file) => ({
-            id: crypto.randomUUID(),
+            id: createTempId(),
             file,
             name: file.name,
             url: URL.createObjectURL(file),
