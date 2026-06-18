@@ -51,6 +51,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/admin/questions/{question}', [\App\Http\Controllers\AdminCMSController::class, 'destroyQuestion']);
 
         Route::put('/admin/answers/{answer}/status', [DashboardController::class, 'updateAnswerStatus'])->name('admin.answers.status');
+        Route::put('/admin/review/{user}/questions/{question}/answer', [\App\Http\Controllers\AdminCMSController::class, 'updateUserAnswer'])->name('admin.review.answer');
         Route::post('/admin/answers/bulk-status', [DashboardController::class, 'bulkUpdateAnswerStatus'])->name('admin.answers.bulk_status');
         Route::get('/admin/review/{user}', [\App\Http\Controllers\AdminCMSController::class, 'reviewOrganization'])->name('admin.review');
         Route::get('/admin/review/{user}/report.pdf', [\App\Http\Controllers\AdminCMSController::class, 'generateReport'])->name('admin.review.report');

@@ -2,7 +2,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye, Archive, Calculator } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, CheckCircle2, AlertCircle, Clock, Download, FileText, FileCheck, Eye, Archive, Calculator, Pencil } from 'lucide-react';
 import { renderHelperCalculator } from '@/components/AuditCalculators';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -70,6 +70,78 @@ function AnswerNotes({ answer }: { answer: any }) {
                     className="h-12 px-10 text-sm font-bold rounded-xl shrink-0 w-full sm:w-auto"
                 >
                     {isSaving ? 'Menyimpan...' : 'Simpan Semua Catatan'}
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+function AdminAnswerEditor({ question, answer, pelaksanaId }: { question: any; answer: any | null; pelaksanaId: number }) {
+    const [optionId, setOptionId] = useState(answer?.option_id ? String(answer.option_id) : '');
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setOptionId(answer?.option_id ? String(answer.option_id) : '');
+        setIsSaving(false);
+    }, [answer?.id, answer?.option_id, question.id]);
+
+    const currentOptionId = answer?.option_id ? String(answer.option_id) : '';
+    const hasChanges = optionId !== '' && optionId !== currentOptionId;
+
+    const handleSave = () => {
+        if (!optionId || !hasChanges) return;
+        setIsSaving(true);
+        router.put(`/admin/review/${pelaksanaId}/questions/${question.id}/answer`, {
+            option_id: Number(optionId),
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            only: ['aspects'],
+            onFinish: () => setIsSaving(false),
+        });
+    };
+
+    return (
+        <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
+                {question.options?.map((opt: any) => (
+                    <label
+                        key={opt.id}
+                        className={`flex items-start gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+                            optionId === String(opt.id)
+                                ? 'border-primary bg-primary/5 shadow-sm'
+                                : 'border-muted hover:border-primary/30 hover:bg-muted/30'
+                        }`}
+                    >
+                        <input
+                            type="radio"
+                            name={`admin-option-${question.id}`}
+                            value={opt.id}
+                            checked={optionId === String(opt.id)}
+                            onChange={() => setOptionId(String(opt.id))}
+                            className="w-4 h-4 accent-primary mt-0.5 shrink-0"
+                        />
+                        <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 min-w-0">
+                            <span className={`text-sm font-bold leading-relaxed ${optionId === String(opt.id) ? 'text-primary' : 'text-foreground/80'}`}>
+                                {opt.text}
+                            </span>
+                            <span className={`text-xs font-black px-2 py-1 rounded-lg shrink-0 ${
+                                optionId === String(opt.id) ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
+                            }`}>
+                                {opt.score}
+                            </span>
+                        </div>
+                    </label>
+                ))}
+            </div>
+            <div className="flex justify-end">
+                <Button
+                    onClick={handleSave}
+                    disabled={isSaving || !hasChanges}
+                    className="h-10 px-6 text-xs font-black uppercase tracking-widest rounded-xl"
+                >
+                    <Pencil className="w-3.5 h-3.5 mr-2" />
+                    {isSaving ? 'Menyimpan...' : (answer ? 'Simpan Perubahan Jawaban' : 'Simpan Jawaban')}
                 </Button>
             </div>
         </div>
@@ -531,8 +603,16 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <div className="w-1.5 h-4 bg-primary rounded-full"></div>
                                                         <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">JAWABAN TERPILIH</span>
+                                                        <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0 border-primary/30 text-primary">
+                                                            Admin
+                                                        </Badge>
                                                     </div>
-                                                    <p className="text-base font-bold text-foreground leading-relaxed">{selectedQuestion.answer.option?.text || '-'}</p>
+                                                    <AdminAnswerEditor
+                                                        key={`${selectedQuestion.id}-${selectedQuestion.answer.id}`}
+                                                        question={selectedQuestion}
+                                                        answer={selectedQuestion.answer}
+                                                        pelaksanaId={pelaksana.id}
+                                                    />
                                                 </div>
                                                 <div className="p-6 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-4">
                                                     <div className="flex items-center gap-2 mb-2">
@@ -604,14 +684,28 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                             <AnswerNotes key={selectedQuestion.answer.id} answer={selectedQuestion.answer} />
                                         </>
                                     ) : (
-                                        <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 bg-muted/10 rounded-3xl border border-dashed">
-                                            <div className="w-16 h-16 rounded-full bg-background border border-muted-foreground/20 flex items-center justify-center mb-2 shadow-sm">
-                                                <AlertCircle className="w-7 h-7 text-muted-foreground/40" />
+                                        <div className="space-y-6">
+                                            <div className="py-10 flex flex-col items-center justify-center text-center space-y-3 bg-muted/10 rounded-3xl border border-dashed">
+                                                <div className="w-14 h-14 rounded-full bg-background border border-muted-foreground/20 flex items-center justify-center shadow-sm">
+                                                    <AlertCircle className="w-6 h-6 text-muted-foreground/40" />
+                                                </div>
+                                                <p className="text-base font-bold text-foreground/70">Asesmen Belum Terjawab</p>
+                                                <p className="text-sm font-medium text-muted-foreground/60 max-w-[320px]">
+                                                    Pengguna belum mengisi jawaban. Admin dapat mengisi jawaban atas nama pengguna di bawah.
+                                                </p>
                                             </div>
-                                            <p className="text-base font-bold text-foreground/70">Asesmen Belum Terjawab</p>
-                                            <p className="text-sm font-medium text-muted-foreground/60 max-w-[300px]">
-                                                Pengguna masih belum mengisi jawaban maupun melampirkan file bukti dukung untuk instrumen ini.
-                                            </p>
+                                            <div className="p-6 rounded-2xl bg-muted/40 border border-muted-foreground/10 space-y-4">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
+                                                    <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">ISI JAWABAN (ADMIN)</span>
+                                                </div>
+                                                <AdminAnswerEditor
+                                                    key={`unanswered-${selectedQuestion.id}`}
+                                                    question={selectedQuestion}
+                                                    answer={null}
+                                                    pelaksanaId={pelaksana.id}
+                                                />
+                                            </div>
                                         </div>
                                     )}
                                 </CardContent>

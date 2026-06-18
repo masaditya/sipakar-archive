@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Aspect;
 use App\Models\SubAspect;
 use App\Models\Question;
+use App\Models\Answer;
 use App\Models\Organization;
 use App\Models\Period;
 use Illuminate\Support\Facades\Hash;
@@ -363,6 +364,36 @@ class AdminCMSController extends Controller
             'pelaksana' => $user,
             'aspects' => $aspects
         ]);
+    }
+
+    public function updateUserAnswer(Request $request, User $user, Question $question)
+    {
+        $validated = $request->validate([
+            'option_id' => [
+                'required',
+                'integer',
+                Rule::exists('options', 'id')->where('question_id', $question->id),
+            ],
+        ]);
+
+        $selectedPeriodId = session('selected_period_id');
+        if (! $selectedPeriodId) {
+            return redirect()->back()->with('error', 'Periode pengawasan aktif belum dipilih.');
+        }
+
+        $answer = Answer::firstOrNew([
+            'user_id' => $user->id,
+            'question_id' => $question->id,
+            'period_id' => $selectedPeriodId,
+        ]);
+
+        $answer->option_id = $validated['option_id'];
+        if (! $answer->exists) {
+            $answer->status = 'submitted';
+        }
+        $answer->save();
+
+        return redirect()->back()->with('success', 'Jawaban pengguna berhasil diperbarui.');
     }
 
     public function generateReport(Request $request, User $user) {
