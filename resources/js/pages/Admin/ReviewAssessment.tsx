@@ -16,6 +16,29 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+function resolveAspectType(aspect: { type?: string; name?: string; sub_aspects?: { type?: string }[] }): string | undefined {
+    if (aspect.type === 'UP' || aspect.type === 'UK') return aspect.type;
+
+    const fromSub = aspect.sub_aspects?.find((sub) => sub.type === 'UP' || sub.type === 'UK')?.type;
+    if (fromSub) return fromSub;
+
+    const match = aspect.name?.match(/\[(UP|UK)\]/i);
+    return match?.[1]?.toUpperCase();
+}
+
+function sortAspectsByType<T extends { type?: string; name?: string; sub_aspects?: { type?: string }[] }>(aspects: T[]): T[] {
+    const order = (aspect: T) => {
+        const type = resolveAspectType(aspect);
+        return type === 'UP' ? 0 : type === 'UK' ? 1 : 2;
+    };
+    return [...aspects].sort((a, b) => order(a) - order(b));
+}
+
+function sortSubAspectsByType<T extends { type?: string }>(subs: T[]): T[] {
+    const order = (type?: string) => (type === 'UP' ? 0 : type === 'UK' ? 1 : 2);
+    return [...subs].sort((a, b) => order(a.type) - order(b.type));
+}
+
 function AnswerNotes({ answer }: { answer: any }) {
     const [notes, setNotes] = useState(answer.notes || '');
     const [recommendation, setRecommendation] = useState(answer.recommendation || '');
@@ -245,8 +268,8 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
     // -------------------------
 
     const allQuestions = useMemo(() => {
-        return aspects.flatMap((aspect: any) =>
-            aspect.sub_aspects.flatMap((sub: any) =>
+        return sortAspectsByType(aspects).flatMap((aspect: any) =>
+            sortSubAspectsByType(aspect.sub_aspects).flatMap((sub: any) =>
                 sub.questions.map((q: any) => {
                     const rawAnswer = q.answers?.[0] ?? null;
                     const answer = rawAnswer
@@ -447,8 +470,8 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                 <div className="mt-2">
                     {!selectedQuestion ? (
                         <div className="space-y-12 animate-in fade-in duration-300">
-                            {aspects.map((aspect: any) => {
-                                const aspectVisibleSubs = aspect.sub_aspects.map((sub: any) => {
+                            {sortAspectsByType(aspects).map((aspect: any) => {
+                                const aspectVisibleSubs = sortSubAspectsByType(aspect.sub_aspects).map((sub: any) => {
                                     const visibleQs = sub.questions.map((q: any) => ({
                                         ...q,
                                         aspect_name: aspect.name,
