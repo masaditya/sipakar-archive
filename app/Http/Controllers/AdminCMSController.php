@@ -381,17 +381,18 @@ class AdminCMSController extends Controller
             return redirect()->back()->with('error', 'Periode pengawasan aktif belum dipilih.');
         }
 
-        $answer = Answer::firstOrNew([
-            'user_id' => $user->id,
-            'question_id' => $question->id,
-            'period_id' => $selectedPeriodId,
-        ]);
+        $answer = Answer::where('user_id', $user->id)
+            ->where('question_id', $question->id)
+            ->where('period_id', $selectedPeriodId)
+            ->first();
 
-        $answer->option_id = $validated['option_id'];
-        if (! $answer->exists) {
-            $answer->status = 'submitted';
+        if (! $answer) {
+            return redirect()->back()->with('error', 'Pengguna belum menjawab soal ini.');
         }
-        $answer->save();
+
+        $answer->update([
+            'option_id' => $validated['option_id'],
+        ]);
 
         return redirect()->back()->with('success', 'Jawaban pengguna berhasil diperbarui.');
     }

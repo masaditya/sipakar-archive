@@ -76,17 +76,23 @@ function AnswerNotes({ answer }: { answer: any }) {
     );
 }
 
-function AdminAnswerEditor({ question, answer, pelaksanaId }: { question: any; answer: any | null; pelaksanaId: number }) {
-    const [optionId, setOptionId] = useState(answer?.option_id ? String(answer.option_id) : '');
+function resolveAnswerOptionId(answer: any | null): string {
+    if (!answer) return '';
+    const id = answer.option_id ?? answer.option?.id;
+    return id != null && id !== '' ? String(id) : '';
+}
+
+function AdminAnswerEditor({ question, answer, pelaksanaId }: { question: any; answer: any; pelaksanaId: number }) {
+    const initialOptionId = useMemo(() => resolveAnswerOptionId(answer), [answer.id, answer.option_id, answer.option?.id]);
+    const [optionId, setOptionId] = useState(initialOptionId);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        setOptionId(answer?.option_id ? String(answer.option_id) : '');
+        setOptionId(resolveAnswerOptionId(answer));
         setIsSaving(false);
-    }, [answer?.id, answer?.option_id, question.id]);
+    }, [answer.id, answer.option_id, answer.option?.id, question.id]);
 
-    const currentOptionId = answer?.option_id ? String(answer.option_id) : '';
-    const hasChanges = optionId !== '' && optionId !== currentOptionId;
+    const hasChanges = optionId !== '' && optionId !== initialOptionId;
 
     const handleSave = () => {
         if (!optionId || !hasChanges) return;
@@ -103,6 +109,9 @@ function AdminAnswerEditor({ question, answer, pelaksanaId }: { question: any; a
 
     return (
         <div className="space-y-4">
+            <p className="text-xs font-medium text-muted-foreground">
+                Jawaban saat ini pengguna sudah terpilih. Pilih opsi lain lalu simpan untuk memperbarui.
+            </p>
             <div className="grid grid-cols-1 gap-3">
                 {question.options?.map((opt: any) => (
                     <label
@@ -141,7 +150,7 @@ function AdminAnswerEditor({ question, answer, pelaksanaId }: { question: any; a
                     className="h-10 px-6 text-xs font-black uppercase tracking-widest rounded-xl"
                 >
                     <Pencil className="w-3.5 h-3.5 mr-2" />
-                    {isSaving ? 'Menyimpan...' : (answer ? 'Simpan Perubahan Jawaban' : 'Simpan Jawaban')}
+                    {isSaving ? 'Menyimpan...' : 'Simpan Perubahan Jawaban'}
                 </Button>
             </div>
         </div>
@@ -602,13 +611,10 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                                 <div className="p-6 rounded-2xl bg-muted/40 border border-muted-foreground/10 space-y-4">
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">JAWABAN TERPILIH</span>
-                                                        <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0 border-primary/30 text-primary">
-                                                            Admin
-                                                        </Badge>
+                                                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">JAWABAN PENGUNA</span>
                                                     </div>
                                                     <AdminAnswerEditor
-                                                        key={`${selectedQuestion.id}-${selectedQuestion.answer.id}`}
+                                                        key={`${selectedQuestion.id}-${selectedQuestion.answer.id}-${selectedQuestion.answer.option_id}`}
                                                         question={selectedQuestion}
                                                         answer={selectedQuestion.answer}
                                                         pelaksanaId={pelaksana.id}
@@ -684,28 +690,14 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                             <AnswerNotes key={selectedQuestion.answer.id} answer={selectedQuestion.answer} />
                                         </>
                                     ) : (
-                                        <div className="space-y-6">
-                                            <div className="py-10 flex flex-col items-center justify-center text-center space-y-3 bg-muted/10 rounded-3xl border border-dashed">
-                                                <div className="w-14 h-14 rounded-full bg-background border border-muted-foreground/20 flex items-center justify-center shadow-sm">
-                                                    <AlertCircle className="w-6 h-6 text-muted-foreground/40" />
-                                                </div>
-                                                <p className="text-base font-bold text-foreground/70">Asesmen Belum Terjawab</p>
-                                                <p className="text-sm font-medium text-muted-foreground/60 max-w-[320px]">
-                                                    Pengguna belum mengisi jawaban. Admin dapat mengisi jawaban atas nama pengguna di bawah.
-                                                </p>
+                                        <div className="py-16 flex flex-col items-center justify-center text-center space-y-4 bg-muted/10 rounded-3xl border border-dashed">
+                                            <div className="w-16 h-16 rounded-full bg-background border border-muted-foreground/20 flex items-center justify-center mb-2 shadow-sm">
+                                                <AlertCircle className="w-7 h-7 text-muted-foreground/40" />
                                             </div>
-                                            <div className="p-6 rounded-2xl bg-muted/40 border border-muted-foreground/10 space-y-4">
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <div className="w-1.5 h-4 bg-primary rounded-full"></div>
-                                                    <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">ISI JAWABAN (ADMIN)</span>
-                                                </div>
-                                                <AdminAnswerEditor
-                                                    key={`unanswered-${selectedQuestion.id}`}
-                                                    question={selectedQuestion}
-                                                    answer={null}
-                                                    pelaksanaId={pelaksana.id}
-                                                />
-                                            </div>
+                                            <p className="text-base font-bold text-foreground/70">Asesmen Belum Terjawab</p>
+                                            <p className="text-sm font-medium text-muted-foreground/60 max-w-[300px]">
+                                                Pengguna masih belum mengisi jawaban maupun melampirkan file bukti dukung untuk instrumen ini.
+                                            </p>
                                         </div>
                                     )}
                                 </CardContent>
