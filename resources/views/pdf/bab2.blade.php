@@ -99,7 +99,7 @@
                 <th style="width: 200px;">KONDISI FAKTUAL</th>
                 <th style="width: 1%; white-space: nowrap;">LEVEL</th>
                 <th style="width: 150px;">CATATAN TIM PENGAWAS</th>
-                <th style="width: 150px;">REKOMENDASI TAHUN {{ date('Y') }}</th>
+                <th style="width: 150px;">REKOMENDASI TAHUN {{ (int) date('Y') + 1 }}</th>
             </tr>
         </thead>
         <tbody>
