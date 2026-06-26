@@ -52,23 +52,6 @@
 
         .center { text-align: center; }
         .bold { font-weight: bold; }
-        
-        .footer-table {
-            width: 100%;
-            margin-top: 25px;
-            border: none;
-        }
-
-        .footer-table td {
-            width: 50%;
-            text-align: center;
-            border: none;
-            padding-top: 5px;
-        }
-
-        .signature-space {
-            height: 50px;
-        }
 
         @php
             function removeBrackets($text) {
@@ -178,25 +161,6 @@
                 @endforeach
             @endforeach
         </tbody>
-    </table>
-
-    <table class="footer-table">
-        <tr>
-            <td>
-                Mengetahui/Menyetujui,<br>
-                {{ $inputs['ttd2_jabatan'] }}<br>
-                <div class="signature-space"></div>
-                <strong><u>{{ $inputs['ttd2_nama'] ?: '..........................................' }}</u></strong><br>
-                NIP. {{ $inputs['ttd2_nip'] ?: '..........................................' }}
-            </td>
-            <td>
-                Bojonegoro, {{ $inputs['tanggal'] }}<br>
-                Tim Pengawas,<br>
-                <div class="signature-space"></div>
-                <strong><u>{{ $inputs['ttd1_nama'] }}</u></strong><br>
-                NIP. {{ $inputs['ttd1_nip'] }}
-            </td>
-        </tr>
     </table>
 
 </body>

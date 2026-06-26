@@ -223,10 +223,6 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
         type: 'UP',
         up_name: 'Bidang ',
         opd_name: pelaksana.organization?.name || '',
-        ttd2_jabatan: `KEPALA ${pelaksana.organization?.name?.toUpperCase() || 'INSTANSI'}`,
-        ttd2_nama: '',
-        ttd2_pangkat: '',
-        ttd2_nip: '',
     });
 
     // --- Persistence Logic ---
@@ -1078,31 +1074,6 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-muted-foreground">{bab2Form.type === 'UP' ? 'Nama Unit Pengolah (UP)' : 'Nama Unit Kearsipan (UK)'}</label>
                                     <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary" value={bab2Form.up_name} onChange={e => setBab2Form({ ...bab2Form, up_name: e.target.value })} />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4 bg-muted/20 p-5 rounded-2xl border">
-                            <h3 className="font-black text-xs uppercase tracking-widest text-emerald-600 flex items-center gap-2">
-                                <div className="w-1.5 h-4 bg-emerald-500 rounded-full"></div>
-                                Informasi Penandatangan (Pihak Instansi)
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2 col-span-1 md:col-span-2">
-                                    <label className="text-xs font-bold text-muted-foreground">Jabatan</label>
-                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={bab2Form.ttd2_jabatan} onChange={e => setBab2Form({ ...bab2Form, ttd2_jabatan: e.target.value })} />
-                                </div>
-                                <div className="space-y-2 col-span-1 md:col-span-2">
-                                    <label className="text-xs font-bold text-muted-foreground">Nama Lengkap</label>
-                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={bab2Form.ttd2_nama} onChange={e => setBab2Form({ ...bab2Form, ttd2_nama: e.target.value })} />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-muted-foreground">Pangkat/Golongan</label>
-                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm" value={bab2Form.ttd2_pangkat} onChange={e => setBab2Form({ ...bab2Form, ttd2_pangkat: e.target.value })} />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-muted-foreground">NIP</label>
-                                    <input className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm tracking-wider" value={bab2Form.ttd2_nip} onChange={e => setBab2Form({ ...bab2Form, ttd2_nip: e.target.value })} />
                                 </div>
                             </div>
                         </div>
