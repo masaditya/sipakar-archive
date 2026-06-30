@@ -5,7 +5,7 @@
     <title>Laporan Pengawasan Kearsipan</title>
     <style>
         @page {
-            margin: 15mm 15mm;
+            margin: 20mm 15mm;
         }
 
         body {
