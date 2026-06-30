@@ -5,7 +5,7 @@
     <title>Laporan Pengawasan Kearsipan</title>
     <style>
         @page {
-            margin: 30mm 15mm;
+            margin: 15mm 15mm;
         }
 
         body {
@@ -114,10 +114,10 @@
             <th class="blue" style="width:30%;">ASPEK/SUB ASPEK</th>
             <th class="blue" style="width:10%;">Nilai Standar </th>
             <th class="blue" style="width:8%;">Nilai </th>
-            <th class="blue" style="width:12%;">Bobot Sub Aspek</th>
+            <th class="blue" style="width:11%;">Bobot Sub Aspek</th>
             <th class="blue" style="width:12%;">Nilai Sub Aspek</th>
-            <th class="blue" style="width:11%;">Bobot Aspek</th>
-            <th class="blue" style="width:12%;">Skor Aspek</th>
+            <th class="blue" style="width:10%;">Bobot Aspek</th>
+            <th class="blue" style="width:14%;">Skor Aspek</th>
         </tr>
         <tr>
             <th class="blue thin center">(1)</th>
@@ -212,10 +212,10 @@
             <th class="blue" style="width:30%;">ASPEK/SUB ASPEK</th>
             <th class="blue" style="width:10%;">Nilai Standar </th>
             <th class="blue" style="width:8%;">Nilai </th>
-            <th class="blue" style="width:12%;">Bobot Sub Aspek</th>
+            <th class="blue" style="width:11%;">Bobot Sub Aspek</th>
             <th class="blue" style="width:12%;">Nilai Sub Aspek</th>
-            <th class="blue" style="width:11%;">Bobot Aspek</th>
-            <th class="blue" style="width:12%;">Skor Aspek</th>
+            <th class="blue" style="width:10%;">Bobot Aspek</th>
+            <th class="blue" style="width:14%;">Skor Aspek</th>
         </tr>
         <tr>
             <th class="blue thin center">(1)</th>
