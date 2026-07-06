@@ -535,10 +535,9 @@ class AdminCMSController extends Controller
         $phpWord->setDefaultFontName('Arial');
         $phpWord->setDefaultFontSize(10);
 
-        // Landscape F4: 33.9cm x 24cm
+        // Landscape F4: 33.9cm x 24cm (pageSizeW/H override any preset)
         $section = $phpWord->addSection([
             'orientation'  => 'landscape',
-            'paperSize'    => 'Custom',
             'pageSizeW'    => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(33.9),
             'pageSizeH'    => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(24),
             'marginTop'    => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(1.5),
