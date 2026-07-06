@@ -1081,6 +1081,14 @@ export default function ReviewAssessment({ pelaksana, aspects }: any) {
                     </div>
                     <div className="p-6 bg-muted/40 border-t flex flex-col sm:flex-row justify-end gap-3 mt-auto">
                         <Button variant="outline" className="rounded-xl w-full sm:w-auto h-11 px-8 font-bold" onClick={() => setBab2ModalOpen(false)}>Batal</Button>
+                        <Button variant="outline" className="rounded-xl w-full sm:w-auto h-11 px-8 font-bold flex items-center shadow-sm border-blue-400/50 text-blue-700 bg-blue-50/50 hover:bg-blue-100/50" onClick={() => {
+                            const params = new URLSearchParams(bab2Form as any).toString();
+                            window.open(`/admin/review/${pelaksana.id}/bab2.docx?${params}`, '_blank');
+                            setBab2ModalOpen(false);
+                        }}>
+                            <FileText className="w-4 h-4 mr-2" />
+                            Unduh DOCX
+                        </Button>
                         <Button variant="secondary" className="rounded-xl w-full sm:w-auto h-11 px-8 font-bold flex items-center shadow-sm" onClick={() => {
                             const params = new URLSearchParams(bab2Form as any).toString();
                             window.open(`/admin/review/${pelaksana.id}/bab2.pdf?download=1&${params}`, '_blank');

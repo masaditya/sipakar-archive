@@ -505,6 +505,189 @@ class AdminCMSController extends Controller
         return $pdf->stream($filename);
     }
 
+    private function getLevel(int $score): int {
+        if ($score >= 100) return 4;
+        if ($score >= 70)  return 3;
+        if ($score >= 50)  return 2;
+        if ($score >= 20)  return 1;
+        return 0;
+    }
+
+    public function generateBab2Docx(Request $request, User $user) {
+        $user->load('organization');
+        $selectedPeriodId = session('selected_period_id');
+        $type   = $request->input('type', 'UP');
+        $upName = $request->input('up_name', ($type === 'UK'
+            ? 'Sekretariat ' . ($user->organization->name ?? '')
+            : 'Bidang '));
+
+        $aspects = Aspect::where('period_id', $selectedPeriodId)
+            ->whereHas('subAspects', fn($q) => $q->where('type', $type))
+            ->with([
+                'subAspects' => fn($q) => $q->where('type', $type),
+                'subAspects.questions.answers' => fn($q) => $q
+                    ->where('user_id', $user->id)
+                    ->where('period_id', $selectedPeriodId)
+                    ->with('option'),
+            ])->get();
+
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        $phpWord->setDefaultFontName('Arial');
+        $phpWord->setDefaultFontSize(10);
+
+        // Landscape F4: 33.9cm x 24cm
+        $section = $phpWord->addSection([
+            'orientation'  => 'landscape',
+            'paperSize'    => 'Custom',
+            'pageSizeW'    => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(33.9),
+            'pageSizeH'    => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(24),
+            'marginTop'    => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(1.5),
+            'marginBottom' => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(1.5),
+            'marginLeft'   => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(1.0),
+            'marginRight'  => \PhpOffice\PhpWord\Shared\Converter::cmToTwip(1.0),
+        ]);
+
+        // --- Header ---
+        $orgName  = strtoupper($user->organization->name ?? '');
+        $nextYear = (int) date('Y') + 1;
+        $hFont    = ['bold' => true, 'size' => 12, 'name' => 'Arial'];
+        $centerPar = ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0, 'spaceBefore' => 0];
+
+        $section->addText('BAB II', $hFont, $centerPar);
+        $section->addText('URAIAN HASIL PENGAWASAN KEARSIPAN INTERNAL', $hFont, $centerPar);
+        $section->addText($orgName, $hFont, $centerPar);
+        $section->addText('TAHUN ' . date('Y'), $hFont, $centerPar);
+        $section->addTextBreak(1);
+
+        // --- Column widths (twips) ---
+        $colW = [
+            \PhpOffice\PhpWord\Shared\Converter::cmToTwip(1.2),  // NO
+            \PhpOffice\PhpWord\Shared\Converter::cmToTwip(9.0),  // ASPEK/KOMPONEN
+            \PhpOffice\PhpWord\Shared\Converter::cmToTwip(6.5),  // KONDISI FAKTUAL
+            \PhpOffice\PhpWord\Shared\Converter::cmToTwip(1.5),  // LEVEL
+            \PhpOffice\PhpWord\Shared\Converter::cmToTwip(6.5),  // CATATAN TIM
+            \PhpOffice\PhpWord\Shared\Converter::cmToTwip(6.5),  // REKOMENDASI
+        ];
+        $totalW = array_sum($colW);
+
+        $phpWord->addTableStyle('mainTable', [
+            'borderSize'       => 6,
+            'borderColor'      => '000000',
+            'cellMarginTop'    => 60,
+            'cellMarginBottom' => 60,
+            'cellMarginLeft'   => 80,
+            'cellMarginRight'  => 80,
+            'width'            => $totalW,
+            'unit'             => 'dxa',
+        ]);
+
+        $table = $section->addTable('mainTable');
+
+        // Font & paragraph presets
+        $boldFont   = ['bold' => true,  'size' => 10, 'name' => 'Arial'];
+        $normalFont = ['bold' => false, 'size' => 10, 'name' => 'Arial'];
+        $left       = ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::START,  'spaceAfter' => 0];
+        $center     = ['alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER, 'spaceAfter' => 0];
+        $cellHdr    = ['bgColor' => 'D1D5DB', 'valign' => 'center'];
+        $cellNorm   = ['valign' => 'center'];
+
+        // --- Table header row ---
+        $headers = [
+            'NO',
+            'ASPEK/KOMPONEN/PERNYATAAN',
+            'KONDISI FAKTUAL',
+            'LEVEL',
+            'CATATAN TIM PENGAWAS',
+            'REKOMENDASI TAHUN ' . $nextYear,
+        ];
+        $table->addRow();
+        foreach ($headers as $i => $hdr) {
+            $table->addCell($colW[$i], $cellHdr)->addText($hdr, $boldFont, $center);
+        }
+
+        // --- Helper closures ---
+        $removeBrackets = fn($text) => trim(preg_replace('/\[.*?\]\s*/', '', $text));
+
+        $addQuestionRows = function ($qList) use ($table, $colW, $normalFont, $boldFont, $center, $left, $cellNorm, $removeBrackets) {
+            $qi = 0;
+            foreach ($qList as $q) {
+                $qi++;
+                $ans        = $q->answers->first();
+                $kondisi    = $ans && $ans->option ? $ans->option->text : '-';
+                $level      = $ans && $ans->option ? $this->getLevel($ans->option->score) : 0;
+                $catatan    = $ans && $ans->notes        ? $ans->notes        : '';
+                $rekomen    = $ans && $ans->recommendation ? $ans->recommendation : '';
+
+                $table->addRow();
+                $table->addCell($colW[0], $cellNorm)->addText($qi . '.', $normalFont, $center);
+                $table->addCell($colW[1], $cellNorm)->addText($removeBrackets($q->text), $normalFont, $left);
+                $table->addCell($colW[2], $cellNorm)->addText($kondisi,  $normalFont, $left);
+                $table->addCell($colW[3], $cellNorm)->addText((string) $level, $normalFont, $center);
+                $table->addCell($colW[4], $cellNorm)->addText($catatan,  $normalFont, $left);
+                $table->addCell($colW[5], $cellNorm)->addText($rekomen,  $normalFont, $left);
+            }
+        };
+
+        // --- Data rows ---
+        $aspectIndex = 0;
+        foreach ($aspects as $aspect) {
+            $aspectIndex++;
+
+            // Aspect header row — bold, colspan 5 on remaining cols
+            $table->addRow();
+            $table->addCell($colW[0], $cellNorm)->addText($aspectIndex . '.', $boldFont, $center);
+            $table->addCell(array_sum(array_slice($colW, 1)), ['gridSpan' => 5, 'valign' => 'center'])
+                  ->addText(strtoupper($removeBrackets($aspect->name)), $boldFont, $left);
+
+            foreach ($aspect->subAspects as $subIdx => $sub) {
+                $subNumber = $subIdx + 1;
+
+                // Sub-aspect header row
+                $table->addRow();
+                $table->addCell($colW[0], $cellNorm)->addText($aspectIndex . '.' . $subNumber . '.', $boldFont, $center);
+                $table->addCell(array_sum(array_slice($colW, 1)), ['gridSpan' => 5, 'valign' => 'center'])
+                      ->addText('SUB-ASPEK ' . strtoupper($removeBrackets($sub->name)), $boldFont, $left);
+
+                $questions    = $sub->questions;
+                $elektronik   = $questions->filter(fn($q) => str_contains($q->text, '[BAGIAN ELEKTRONIK]'));
+                $konvensional = $questions->filter(fn($q) => str_contains($q->text, '[BAGIAN KONVENSIONAL]'));
+                $others       = $questions->reject(fn($q) => str_contains($q->text, '[BAGIAN ELEKTRONIK]') || str_contains($q->text, '[BAGIAN KONVENSIONAL]'));
+
+                if ($elektronik->isNotEmpty()) {
+                    $table->addRow();
+                    $table->addCell($colW[0], $cellNorm)->addText('A.', $boldFont, $center);
+                    $table->addCell(array_sum(array_slice($colW, 1)), ['gridSpan' => 5, 'valign' => 'center'])
+                          ->addText('BAGIAN ELEKTRONIK', $boldFont, $left);
+                    $addQuestionRows($elektronik);
+                }
+
+                if ($konvensional->isNotEmpty()) {
+                    $prefix = $elektronik->isNotEmpty() ? 'B.' : 'A.';
+                    $table->addRow();
+                    $table->addCell($colW[0], $cellNorm)->addText($prefix, $boldFont, $center);
+                    $table->addCell(array_sum(array_slice($colW, 1)), ['gridSpan' => 5, 'valign' => 'center'])
+                          ->addText('BAGIAN KONVENSIONAL', $boldFont, $left);
+                    $addQuestionRows($konvensional);
+                }
+
+                if ($others->isNotEmpty()) {
+                    $addQuestionRows($others);
+                }
+            }
+        }
+
+        // --- Stream as download ---
+        $filename = 'BAB2-' . $type . '-' . $user->name . '.docx';
+        $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'bab2_');
+        $objWriter->save($tempPath);
+
+        return response()->download($tempPath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ])->deleteFileAfterSend(true);
+    }
+
     public function downloadEvidenceZip(User $user)
     {
         $selectedPeriodId = session('selected_period_id');
