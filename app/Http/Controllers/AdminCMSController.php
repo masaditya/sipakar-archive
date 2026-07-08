@@ -531,6 +531,7 @@ class AdminCMSController extends Controller
                     ->with('option'),
             ])->get();
 
+        \PhpOffice\PhpWord\Settings::setOutputEscapingEnabled(true);
         $phpWord = new \PhpOffice\PhpWord\PhpWord();
         $phpWord->setDefaultFontName('Arial');
         $phpWord->setDefaultFontSize(10);
